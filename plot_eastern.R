@@ -100,11 +100,8 @@ make_veg_map(data = psd, breaks = psdBreaks, coords = coord, legendName = 'std. 
 dev.off()
 
 
-
-# need to work on this:
-pdf(file.path(outputDir, paste0('PLScomposition_eastern_', productVersion, '_rawData.pdf')), height = figHgt, width = figWth)
-
-dev.off()
+# plot raw data as colored polygons
+# it would be nice to have this as a function, but there is a lot of pre-processing...
 
 nTowns <- dim(townCellOverlap)[1]
 easternDataDir <- paste0(easternVersionID, '.', easternVersion)
