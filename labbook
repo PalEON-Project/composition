@@ -1,0 +1,17 @@
+2/25/14:
+eastern and western first runs 0.1 (run0) finished though some problems in writing to disk or something so there were error msgs; need to rerun prob calcs for western
+
+
+2/14/14:
+eastern-0 is first long 100k run; sigma2 mixing is slow
+eastern-1 is another run where I use seed of 1 and do runif(0.1,3) for sigma init; I'm changing the code in code/mcmc.R temporarily
+
+2/3/14:
+
+in mcmc.R, having W be many rows, few columns better than transposed, presumablybecause R and Rcpp both have column-major storage
+code/mcmc{,Auxil}.transposedW.R tests with having many columns
+
+2/2/14:
+
+in fit for BAM for western, I included Illegible in Other but at the moment not doing that, on the thought that those are trees that are likely in our used taxa so don't want to put as 'other' since they are likely not
+

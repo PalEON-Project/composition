@@ -1,0 +1,37 @@
+# configuration file for running composition model
+# should follow syntax that can be read in both the UNIX shell and in R:
+# -- put all character strings in quotes
+# -- do not place any spaces before or after the "=" assignment
+
+# note that Albers grid and subsetting information for the subdomains is in code/set_domain.R
+
+westernVersion="0.3"
+easternVersionID="1372"
+easternVersion="08"
+ohioVersionID="471"  
+ohioVersion="02"
+
+productVersion="0.1"
+
+nbhdStructure="bin"  # tps, Lindgren, eventually
+
+# projectDir should be the main directory containing this config file
+projectDir="~/research/jmac/composition"
+codeDir="code"
+
+# temporary directories for storing intermediate data and final output
+plotDir="/var/tmp/paciorek/paleon/comp/plots"
+outputDir="/var/tmp/paciorek/paleon/comp/output"
+tmpDir="/var/tmp/paciorek/paleon/comp/tmp"
+dataDir="/var/tmp/paciorek/paleon/comp/data"
+
+S=100000
+thin=200
+secondThin=1
+resumeRun=FALSE
+numCoresToUse=1
+numSamplesForProps=500
+
+uniqueRunID="0"
+
+seed=0

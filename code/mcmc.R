@@ -1,0 +1,218 @@
+source('code/mcmcAuxil.R')
+
+library(spam)
+
+runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townCellIds = NULL,
+                   S, thin, resumeRun, hyperpar = c(-0.5, 0), rho = NULL, areallyAggregated = FALSE,
+                   outputNcdfName, taxa, numCores = 1, runID = "", dataDir, outputDir) {
+
+  
+  exclude <- is.na(y)
+  if(areallyAggregated) {
+    exclude <- exclude | is.na(town)
+  } else exclude <- exclude | is.na(cell)
+  
+  y    <- y[!exclude]
+  N<-length(y)
+  Nvec <- 1:N
+
+  if(sum(exclude))
+    warning("NAs found in 'y', 'cell', or 'town'; excluding these observations.")
+
+  if(!areallyAggregated) {
+    cell <- cell[!exclude]
+  } else {
+    town <- town[!exclude]
+    probs <- townCellOverlap / rowSums(townCellOverlap)
+    cumProbs <- apply(probs, 1, cumsum)
+    maxCells <- ncol(townCellOverlap)
+    maxCellsByTown <- as.integer(apply(townCellOverlap, 1, function(x) sum(x>0)))
+    possIds <- t(townCellIds[town,])
+    prior <-  t(townCellOverlap[town, ]) 
+    # could incorporate identification of cells within sampleCells
+    cell <- possIds[cbind(sampleCells_cpp(prior), Nvec)]
+  }
+    
+  P <- length(taxa$taxonName)
+  I<-nrow(C)
+ 
+  infs <- rep(Inf, N)
+  negInfs <- rep(-Inf, N)
+    
+  S_keep <- floor(S/thin) 
+  S      <- S - S%%S_keep
+  
+  if(resumeRun) {
+    load(file.path(dataDir, paste0('lastState', runID, '.Rda')))
+    .Random.seed <<- .Random.seed
+    sampleIterates <- (s+1):S
+    
+  } else {
+    sampleIterates <- 1:S
+    storeIndex <- 1
+
+    W <- matrix(0, N, P)
+    
+    sigma2store <- matrix(0, S_keep, P)
+    #alpha_last <- alpha_next <- matrix(0, I, P)
+    alpha_last <- alpha_next <- matrix(rnorm(I*P), I, P)
+
+#    sigma2_last <- sigma2_next <- rep(1,P)
+    sigma2_last <- sigma2_next <- runif(P, 0.1, 3)
+  }
+
+  n <- rep(0, I)
+  tbl <- table(cell)
+  n[as.numeric(names(tbl))] <- tbl
+  
+  Wi.pbar<-matrix(0, I, P)
+    
+  if(is.null(rho)) {
+    Vinv    <- C
+  } else {
+    Vinv <- rho*C
+    diag(Vinv) <- diag(Vinv) + 1
+  }
+
+  # do initial Cholesky based on sparseness pattern
+  B <- Vinv
+  diag(B) <- diag(B) + n
+  if(!is.spam(B)) warning("B is not spam")
+  U <- chol(B)  
+    
+  # Gathering some indices outside the loop
+
+  treeInd <- treeNonInd <- cellInd <- cellNonInd <- list() 
+  
+  for(p in 1:P){
+    treeInd[[p]]  <- which(y==p)
+    treeNonInd[[p]] <- which(y!=p)
+    cellInd[[p]]  <- cell[y==p]
+    cellNonInd[[p]] <- cell[y!=p]
+  }
+  
+  nTreeInd  <- lapply(treeInd, length)
+  nTreeNonInd <- lapply(treeNonInd, length)
+  
+  for(s in sampleIterates){
+    
+    # sample the latent W's
+    for(p in 1:P){
+      if(nTreeInd[[p]] == 1){
+          # need to use max, since don't have a matrix in this case; just use simple R version rtruncnorm
+        W[treeInd[[p]], p] <- rtruncnorm(nTreeInd[[p]], alpha_last[cellInd[[p]], p],
+                                         max(W[treeInd[[p]], -p]), Inf) 
+      } else {
+          # since this calc involves smaller objects, do simple rowmax_cpp as rowmax2_cpp doesn't help here
+        W[treeInd[[p]], p] <- rtruncnorm_cpp(nTreeInd[[p]], alpha_last[cellInd[[p]], p],
+                                             rowmax_cpp(W[treeInd[[p]],-p]), Inf)
+      }
+      if(numCores > 1) {
+        # this saves another 0.5 s or so, but means that RNG is not same as with single core operation
+ 
+        W[treeNonInd[[p]], p] <- rtruncnorm_cpp_mp(nTreeNonInd[[p]], alpha_last[cellNonInd[[p]], p],
+                                                   -Inf, rowmax2_cpp_mp(W, treeNonInd[[p]], p))
+        # rowmax2_cpp_mp does not seem to help in terms of speed - 3.4sec/it vs 3.7sec per it
+      } else {
+        # non-MP version
+        W[treeNonInd[[p]], p] <- rtruncnorm_cpp(nTreeNonInd[[p]], alpha_last[cellNonInd[[p]], p],
+                                                -Inf, rowmax2_cpp(W, treeNonInd[[p]], p))
+      }
+      
+    }
+
+    # summarize the W's
+    Wi.pbar<-compute_cell_sums_cpp(W,cell,I,P)/c(n+1*(n==0))
+
+    # update alpha's and sigma2's
+    for(p in 1:P){
+      
+      if(is.null(rho)) {
+        Vinv <- C / sigma2_last[p]
+      } else{
+        Vinv <- rho*C
+        diag(Vinv) <- diag(Vinv) + 1
+        Vinv <- Vinv / sigma2_last[p] 
+      }
+      
+      B <- Vinv
+      diag(B) <- diag(B) + n
+          
+      U <- update.spam.chol.NgPeyton(U, B)
+      means <- backsolve(U, forwardsolve(U, Wi.pbar[ , p] * n))
+      
+      alpha_next[,p] <- means + backsolve(U, rnorm(I))
+      
+      ss<-sigma2_last[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
+      sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + I/2, scale = 1/(.5*ss + hyperpar[2])) 
+          
+      if(is.na(sigma2_next[p])) { # sigma2 too small
+        sigma2_next[p] <- sigma2_last[p]
+        alpha_next[,p] <- alpha_last[,p]
+      }
+    }
+ 
+    # sample cell indices
+    if(areallyAggregated) {
+      probs <- calcProbs(t(W), t(alpha_next), prior, possIds, maxCellsByTown, town)
+      whichCell <- sampleCells_cpp(probs)
+ 
+      cell <- possIds[cbind(whichCell, Nvec)];
+      n <- table_cpp(as.integer(cell), I)
+
+      for(p in 1:P){
+        cellInd[[p]]  <- cell[treeInd[[p]]]
+        cellNonInd[[p]] <- cell[treeNonInd[[p]]]
+      }
+    }
+
+    if (s%%thin==0){
+      outputNcdfPtr <- nc_open(file.path(dataDir, outputNcdfName), write = TRUE)
+      sigma2store[storeIndex, ] <- sigma2_next
+      for(p in 1:P) 
+        ncvar_put(outputNcdfPtr, taxa$taxonName[p], matrix(alpha_next[ , p], m1, m2) , start = c(1, 1, storeIndex), count = c(-1, -1, 1))
+      nc_close(outputNcdfPtr)
+      storeIndex <- storeIndex + 1
+    }
+    
+    sigma2_last <- sigma2_next
+    alpha_last  <- alpha_next
+
+    if(s%%100 == 0)
+      cat("Finished MCMC iteration ", s, " at ", date(), ".\n", sep = "")
+
+    if(s %% 250 == 0) {
+      save(alpha_last, sigma2_last, s, cell, .Random.seed, W, sigma2store, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
+    }
+  } # end for s loop
+
+  save(sigma2store, file = file.path(outputDir, paste0("sigma2", runID, ".Rda")))
+  invisible(NULL)
+}
+
+drawProportions <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, numInputSamples, secondThin = 1, I, taxa){
+
+  samples <- seq(1, numInputSamples, by = secondThin)
+  P <- length(taxa)
+
+  tmp <- matrix(0, I, P)
+  
+  for(s in seq_along(samples)) {
+
+    for(p in 1:P) 
+      tmp[ , p] <- ncvar_get(latentNcdfPtr, varid = taxa[p], start = c(1, 1, samples[s]), count = c(-1, -1, 1))
+    
+    phat <- compute_cell_probabilities_cpp(tmp, numMCsamples, I, P)
+
+    for(p in 1:P) 
+      ncvar_put(outputNcdfPtr, taxa[p], phat[ , p], start = c(1, 1, s), count = c(-1, -1, 1))
+
+    if(s%%10 == 0)
+      cat("Finished sampling probabilities for (thinned) MCMC sample number ", samples[s], " at ", date(), ".\n", sep = "")
+  }
+  
+  invisible(NULL)
+}
+
+
+
