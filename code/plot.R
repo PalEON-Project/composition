@@ -15,7 +15,7 @@ theme_clean <- function(plot_obj){
   return(plot_obj)
 }
 
-make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_data = usShp, facet = TRUE) {
+make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_data = usShp, facet = TRUE, col = terrain.colors, reverse_colors = TRUE, print = TRUE) {
 
   make_map <- function() {
 
@@ -29,9 +29,11 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
       nm <- gsub("\\.", " ", nm)
     }
     taxon_dat_long <- melt(taxon_dat, c('X', 'Y'))
-    
+
+    col <- col(length(breaks))
+    if(reverse_colors) col <- rev(col)
     d <- ggplot() + geom_raster(data = taxon_dat_long, aes(x = X, y = Y, fill = factor(value))) + 
-      scale_fill_manual(values = tim.colors(length(breaks)), labels = breaklabels, name = legendName) + coord_fixed() + theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16))
+      scale_fill_manual(values = col, labels = breaklabels, name = legendName) + coord_fixed() + theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16))
     d <- add_map_albers(plot_obj = d, map_data = map_data, dat = taxon_dat_long)
     if(facet) {
       d <- d + facet_wrap(~variable, ncol=5)
@@ -39,7 +41,7 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
       d <- d + ggtitle(nm)
     }
     d <- theme_clean(d)
-    print(d)
+    return(d)
   }
 
   data_binned <- matrix(0, nrow = nrow(data), ncol = ncol(data))
@@ -54,11 +56,13 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
   
   if(facet) {
     taxon_dat <- data.frame(X = coords$X, Y = coords$Y, data_binned)
-    make_map()
+    d <- make_map()
+    if(print) print(d)
   } else {
     for(p in seq_len(ncol(data))) {
       taxon_dat <- data.frame(X = coords$X, Y = coords$Y, Preds = data_binned[ , p])
-      make_map()
+      d <- make_map()
+      print(d)
     }
   }
 }
