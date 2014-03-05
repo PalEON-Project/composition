@@ -3,8 +3,10 @@ source('code/mcmcAuxil.R')
 library(spam)
 
 runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townCellIds = NULL,
-                   S, thin, resumeRun, hyperpar = c(-0.5, 0), rho = NULL, areallyAggregated = FALSE,
-                   outputNcdfName, taxa, numCores = 1, runID = "", dataDir, outputDir) {
+                   S, thin, resumeRun, hyperpar = c(-0.5, 0),
+                   joint_sample = TRUE, adaptInterval = 100, adaptStartTaper = 3000,                   
+                   rho = NULL, areallyAggregated = FALSE, outputNcdfName, taxa, numCores = 1, runID = "",
+                   dataDir, outputDir) {
 
   
   exclude <- is.na(y)
@@ -36,6 +38,11 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
   P <- length(taxa$taxonName)
   I<-nrow(C)
  
+  sigma_propSD <- rep(0.02, P)
+  # modify this to do adaptive
+  numAccept <- rep(0, P)
+
+
   infs <- rep(Inf, N)
   negInfs <- rep(-Inf, N)
     
@@ -125,30 +132,89 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
     Wi.pbar<-compute_cell_sums_cpp(W,cell,I,P)/c(n+1*(n==0))
 
     # update alpha's and sigma2's
-    for(p in 1:P){
-      
-      if(is.null(rho)) {
-        Vinv <- C / sigma2_last[p]
-      } else{
-        Vinv <- rho*C
-        diag(Vinv) <- diag(Vinv) + 1
-        Vinv <- Vinv / sigma2_last[p] 
+    if(joint_sample) {
+      if(hyper_par != c(-0.5, 0))
+        stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
+      for(p in 1:P){
+        
+        sigma2_next[p] <- sqrt(rnorm(1, sqrt(sigma2_last[p]), sigma_propSD[p]))
+        if(sigma2_next[p] < 0) {
+          accept <- FALSE 
+        } else {
+
+          # terms for reverse proposal
+          if(is.null(rho)) {
+            Vinv <- C / sigma2_last[p]
+          } else{
+            Vinv <- rho*C
+            diag(Vinv) <- diag(Vinv) + 1
+            Vinv <- Vinv / sigma2_last[p] 
+          }
+          B <- Vinv
+          diag(B) <- diag(B) + n
+          
+          U <- update.spam.chol.NgPeyton(U, B)
+          
+          denominator <- -(I-2)*log(sigma2_last[p])/2 - sum(log(diag(U)))
+          tmp <- forwardsolve(U, Wi.pbar[ , p] * n)
+          denominator <- denominator - 0.5*sum(tmp^2)
+          
+          # terms for forward proposal
+          if(is.null(rho)) {
+            Vinv <- C / sigma2_next[p]
+          } else{
+            Vinv <- rho*C
+            diag(Vinv) <- diag(Vinv) + 1
+            Vinv <- Vinv / sigma2_next[p] 
+          }
+          B <- Vinv
+          diag(B) <- diag(B) + n
+          
+          U <- update.spam.chol.NgPeyton(U, B)
+          
+          numerator <- -(I-2)*log(sigma2_next[p])/2 - sum(log(diag(U)))
+          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
+          numerator <- numerator - 0.5*sum(UtWi^2)
+          
+          accept <- decide(numerator - denominator)
+        }
+        if(accept) {
+          numAccept[p] <- numAccept[p] + 1
+          # sample alphas
+          means <- backsolve(U, UtWi)
+          alpha_next[,p] <- means + backsolve(U, rnorm(I))
+        } else {
+          sigma2_next[p] <- sigma2_last[p]
+          alpha_next[,p] <- alpha_last[,p]
+        }
       }
-      
-      B <- Vinv
-      diag(B) <- diag(B) + n
-          
-      U <- update.spam.chol.NgPeyton(U, B)
-      means <- backsolve(U, forwardsolve(U, Wi.pbar[ , p] * n))
-      
-      alpha_next[,p] <- means + backsolve(U, rnorm(I))
-      
-      ss<-sigma2_last[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
-      sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + I/2, scale = 1/(.5*ss + hyperpar[2])) 
-          
-      if(is.na(sigma2_next[p])) { # sigma2 too small
-        sigma2_next[p] <- sigma2_last[p]
-        alpha_next[,p] <- alpha_last[,p]
+
+    } else {
+      for(p in 1:P){
+        
+        if(is.null(rho)) {
+          Vinv <- C / sigma2_last[p]
+        } else{
+          Vinv <- rho*C
+          diag(Vinv) <- diag(Vinv) + 1
+          Vinv <- Vinv / sigma2_last[p] 
+        }
+        
+        B <- Vinv
+        diag(B) <- diag(B) + n
+        
+        U <- update.spam.chol.NgPeyton(U, B)
+        means <- backsolve(U, forwardsolve(U, Wi.pbar[ , p] * n))
+        
+        alpha_next[,p] <- means + backsolve(U, rnorm(I))
+        
+        ss<-sigma2_last[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
+        sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + I/2, scale = 1/(.5*ss + hyperpar[2])) 
+        
+        if(is.na(sigma2_next[p])) { # sigma2 too small
+          sigma2_next[p] <- sigma2_last[p]
+          alpha_next[,p] <- alpha_last[,p]
+        }
       }
     }
  
@@ -181,6 +247,11 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
     if(s%%100 == 0)
       cat("Finished MCMC iteration ", s, " at ", date(), ".\n", sep = "")
 
+    if(s%%adaptInterval == 0) {
+      cat("Acceptance rate for sigma/alpha joint proposals: ", round(numAccept/adaptInterval, 2), ".\n", sep = " ")
+      numAccept <- rep(0, nTaxa)
+    }
+    
     if(s %% 250 == 0) {
       save(alpha_last, sigma2_last, s, cell, .Random.seed, W, sigma2store, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
     }

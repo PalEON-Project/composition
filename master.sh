@@ -129,3 +129,6 @@ unzip tmp_alb.zip
 
 # this creates the mask (paleonMask.nc) for screening out water and non-paleon state cells
 ./create_mask.R >& log.create_mask &
+
+
+./plot_full.R

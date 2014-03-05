@@ -1,6 +1,13 @@
 require(Rcpp)
 require(inline)
 
+decide <- function(logMetropolisRatio) {
+  if(is.na(logMetropolisRatio)) return(FALSE)
+  if(logMetropolisRatio > 0) return(TRUE)
+  if(runif(1,0,1) < exp(logMetropolisRatio)) TRUE else FALSE
+}
+
+
 ##################################################################################
 # random sampling of cells to which trees belong, given set of probabilities
 ##################################################################################
