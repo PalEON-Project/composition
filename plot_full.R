@@ -258,3 +258,4 @@ pdf(file.path(outputDir, paste0('PLScomposition_eastern_', productVersion, '_raw
 print(d)
 dev.off()
 
+}

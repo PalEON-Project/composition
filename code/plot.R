@@ -10,7 +10,7 @@ theme_clean <- function(plot_obj){
                                axis.text.y = element_blank(), 
                                axis.text.x = element_blank(),
                                axis.title.x = element_blank(),
-                               axis.title.y = element_blank())
+                               axis.title.y = element_blank()) + theme_bw()
   
   return(plot_obj)
 }
