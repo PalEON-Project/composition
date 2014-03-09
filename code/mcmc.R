@@ -144,7 +144,7 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
       alpha_next[,p] <- means + backsolve(U, rnorm(I))
       
       ss<-sigma2_last[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
-      sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + I/2, scale = 1/(.5*ss + hyperpar[2])) 
+      sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I-1)/2, scale = 1/(.5*ss + hyperpar[2])) 
           
       if(is.na(sigma2_next[p])) { # sigma2 too small
         sigma2_next[p] <- sigma2_last[p]
