@@ -61,11 +61,11 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
     W <- matrix(0, N, P)
     
     sigma2store <- matrix(0, S_keep, P)
-    #alpha_last <- alpha_next <- matrix(0, I, P)
-    alpha_last <- alpha_next <- matrix(rnorm(I*P), I, P)
+    #alpha_current <- alpha_next <- matrix(0, I, P)
+    alpha_current <- alpha_next <- matrix(rnorm(I*P), I, P)
 
-#    sigma2_last <- sigma2_next <- rep(1,P)
-    sigma2_last <- sigma2_next <- runif(P, 0.1, 3)
+#    sigma2_current <- sigma2_next <- rep(1,P)
+    sigma2_current <- sigma2_next <- runif(P, 0.1, 3)
   }
 
   n <- rep(0, I)
@@ -107,22 +107,22 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
     for(p in 1:P){
       if(nTreeInd[[p]] == 1){
           # need to use max, since don't have a matrix in this case; just use simple R version rtruncnorm
-        W[treeInd[[p]], p] <- rtruncnorm(nTreeInd[[p]], alpha_last[cellInd[[p]], p],
+        W[treeInd[[p]], p] <- rtruncnorm(nTreeInd[[p]], alpha_current[cellInd[[p]], p],
                                          max(W[treeInd[[p]], -p]), Inf) 
       } else {
           # since this calc involves smaller objects, do simple rowmax_cpp as rowmax2_cpp doesn't help here
-        W[treeInd[[p]], p] <- rtruncnorm_cpp(nTreeInd[[p]], alpha_last[cellInd[[p]], p],
+        W[treeInd[[p]], p] <- rtruncnorm_cpp(nTreeInd[[p]], alpha_current[cellInd[[p]], p],
                                              rowmax_cpp(W[treeInd[[p]],-p]), Inf)
       }
       if(numCores > 1) {
         # this saves another 0.5 s or so, but means that RNG is not same as with single core operation
  
-        W[treeNonInd[[p]], p] <- rtruncnorm_cpp_mp(nTreeNonInd[[p]], alpha_last[cellNonInd[[p]], p],
+        W[treeNonInd[[p]], p] <- rtruncnorm_cpp_mp(nTreeNonInd[[p]], alpha_current[cellNonInd[[p]], p],
                                                    -Inf, rowmax2_cpp_mp(W, treeNonInd[[p]], p))
         # rowmax2_cpp_mp does not seem to help in terms of speed - 3.4sec/it vs 3.7sec per it
       } else {
         # non-MP version
-        W[treeNonInd[[p]], p] <- rtruncnorm_cpp(nTreeNonInd[[p]], alpha_last[cellNonInd[[p]], p],
+        W[treeNonInd[[p]], p] <- rtruncnorm_cpp(nTreeNonInd[[p]], alpha_current[cellNonInd[[p]], p],
                                                 -Inf, rowmax2_cpp(W, treeNonInd[[p]], p))
       }
       
@@ -130,34 +130,37 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
 
     # summarize the W's
     Wi.pbar<-compute_cell_sums_cpp(W,cell,I,P)/c(n+1*(n==0))
+#    joint_sample <- FALSE
+#    if(s == 301) browser()
 
     # update alpha's and sigma2's
-    if(joint_sample) {
-      if(hyper_par != c(-0.5, 0))
-        stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
-      for(p in 1:P){
+   if(joint_sample) {
+    if(!identical(hyperpar, c(-0.5, 0)))
+      stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
+    
+    for(p in 1:P){
         
-        sigma2_next[p] <- sqrt(rnorm(1, sqrt(sigma2_last[p]), sigma_propSD[p]))
+        sigma2_next[p] <- (rnorm(1, sqrt(sigma2_current[p]), sigma_propSD[p]))^2
         if(sigma2_next[p] < 0) {
           accept <- FALSE 
         } else {
 
           # terms for reverse proposal
           if(is.null(rho)) {
-            Vinv <- C / sigma2_last[p]
+            Vinv <- C / sigma2_current[p]
           } else{
             Vinv <- rho*C
             diag(Vinv) <- diag(Vinv) + 1
-            Vinv <- Vinv / sigma2_last[p] 
+            Vinv <- Vinv / sigma2_current[p] 
           }
           B <- Vinv
           diag(B) <- diag(B) + n
           
           U <- update.spam.chol.NgPeyton(U, B)
           
-          denominator <- -(I-2)*log(sigma2_last[p])/2 - sum(log(diag(U)))
-          tmp <- forwardsolve(U, Wi.pbar[ , p] * n)
-          denominator <- denominator - 0.5*sum(tmp^2)
+          denominator <- -(I-1)*log(sigma2_current[p])/2 - sum(log(diag(U)))
+          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
+          denominator <- denominator + 0.5*sum(UtWi^2)
           
           # terms for forward proposal
           if(is.null(rho)) {
@@ -172,9 +175,9 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
           
           U <- update.spam.chol.NgPeyton(U, B)
           
-          numerator <- -(I-2)*log(sigma2_next[p])/2 - sum(log(diag(U)))
+          numerator <- -(I-1)*log(sigma2_next[p])/2 - sum(log(diag(U)))
           UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
-          numerator <- numerator - 0.5*sum(UtWi^2)
+          numerator <- numerator + 0.5*sum(UtWi^2)
           
           accept <- decide(numerator - denominator)
         }
@@ -184,40 +187,47 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
           means <- backsolve(U, UtWi)
           alpha_next[,p] <- means + backsolve(U, rnorm(I))
         } else {
-          sigma2_next[p] <- sigma2_last[p]
-          alpha_next[,p] <- alpha_last[,p]
+          sigma2_next[p] <- sigma2_current[p]
+          alpha_next[,p] <- alpha_current[,p]
         }
       }
 
-    } else {
-      for(p in 1:P){
-        
-        if(is.null(rho)) {
-          Vinv <- C / sigma2_last[p]
-        } else{
-          Vinv <- rho*C
-          diag(Vinv) <- diag(Vinv) + 1
-          Vinv <- Vinv / sigma2_last[p] 
-        }
-        
-        B <- Vinv
-        diag(B) <- diag(B) + n
-        
-        U <- update.spam.chol.NgPeyton(U, B)
-        means <- backsolve(U, forwardsolve(U, Wi.pbar[ , p] * n))
-        
-        alpha_next[,p] <- means + backsolve(U, rnorm(I))
-        
-        ss<-sigma2_last[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
-        sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + I/2, scale = 1/(.5*ss + hyperpar[2])) 
-        
-        if(is.na(sigma2_next[p])) { # sigma2 too small
-          sigma2_next[p] <- sigma2_last[p]
-          alpha_next[,p] <- alpha_last[,p]
-        }
+    }
+    sigma2_current <- sigma2_next
+    alpha_current  <- alpha_next
+    
+                                        # for the moment, also include the non-joint sample as well so that alphas can move on their own; this adds about a second per iteration
+    for(p in 1:P){
+      
+      if(is.null(rho)) {
+        Vinv <- C / sigma2_current[p]
+      } else{
+        Vinv <- rho*C
+        diag(Vinv) <- diag(Vinv) + 1
+        Vinv <- Vinv / sigma2_current[p] 
+      }
+      
+      B <- Vinv
+      diag(B) <- diag(B) + n
+      
+      U <- update.spam.chol.NgPeyton(U, B)
+      means <- backsolve(U, forwardsolve(U, Wi.pbar[ , p] * n))
+      
+      alpha_next[,p] <- means + backsolve(U, rnorm(I))
+      
+      ss <- sigma2_current[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
+      sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I-1)/2, scale = 1/(.5*ss + hyperpar[2])) 
+      # need I-1 because of the zero eigenvalue in the precision matrix
+      
+      if(is.na(sigma2_next[p])) { # sigma2 too small
+        sigma2_next[p] <- sigma2_current[p]
+        alpha_next[,p] <- alpha_current[,p]
       }
     }
- 
+    sigma2_current <- sigma2_next
+    alpha_current  <- alpha_next
+
+
     # sample cell indices
     if(areallyAggregated) {
       probs <- calcProbs(t(W), t(alpha_next), prior, possIds, maxCellsByTown, town)
@@ -241,9 +251,7 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
       storeIndex <- storeIndex + 1
     }
     
-    sigma2_last <- sigma2_next
-    alpha_last  <- alpha_next
-
+ 
     if(s%%100 == 0)
       cat("Finished MCMC iteration ", s, " at ", date(), ".\n", sep = "")
 
@@ -253,7 +261,7 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
     }
     
     if(s %% 250 == 0) {
-      save(alpha_last, sigma2_last, s, cell, .Random.seed, W, sigma2store, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
+      save(alpha_next, sigma2_next, s, cell, .Random.seed, W, sigma2store, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
     }
   } # end for s loop
 
