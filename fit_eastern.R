@@ -37,7 +37,6 @@ out = runMCMC(y = data$taxon, cell = NULL, C = nbhd, town = data$town,
   numCores = numCoresToUse, runID = paste0("-eastern-run", uniqueRunID), dataDir = dataDir,
   outputDir = outputDir)
 
-nc_close(latentNcdfPtr)
 
 # post process to get draws of proportions
 outputNcdfName <- paste0('PLScomposition_eastern_', productVersion, fnAdd, '.nc')
