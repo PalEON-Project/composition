@@ -25,8 +25,8 @@ outputDir="/var/tmp/paciorek/paleon/comp/output"
 tmpDir="/var/tmp/paciorek/paleon/comp/tmp"
 dataDir="/var/tmp/paciorek/paleon/comp/data"
 
-S=100000
-thin=200
+S=150000
+thin=250
 secondThin=1
 resumeRun=FALSE
 numCoresToUse=1
