@@ -15,3 +15,10 @@ code/mcmc{,Auxil}.transposedW.R tests with having many columns
 
 in fit for BAM for western, I included Illegible in Other but at the moment not doing that, on the thought that those are trees that are likely in our used taxa so don't want to put as 'other' since they are likely not
 
+3/17/14:
+I think i will leave out 'unknown tree' now.
+need more info on dogwood in eastern town to see if there are enough to model
+leave out mulberry as not in east town and probably rare
+cherry (1700) and sycamore (1200) not modelled but gum (2200) and walnut(2800) are
+
+west should have all 21 eastern taxa but no white cedar or chestnut since zero trees
