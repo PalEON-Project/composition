@@ -95,13 +95,13 @@ export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
 ########################################################################
 
 # eastern
-burnin=40000
+burnin=25000
 echo "burnin=$burnin" > tmp.config
 echo "domain=\"eastern\"" >> tmp.config
 ./remove_burnin.R
 
 # western
-burnin=40000
+burnin=25000
 echo "burnin=$burnin" > tmp.config
 echo "domain=\"western\"" >> tmp.config
 ./remove_burnin.R 

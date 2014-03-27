@@ -26,6 +26,7 @@ tmpDir="/var/tmp/paciorek/paleon/comp/tmp"
 dataDir="/var/tmp/paciorek/paleon/comp/data"
 
 S=150000
+burnin=25000
 thin=250
 secondThin=1
 resumeRun=FALSE
