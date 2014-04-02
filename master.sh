@@ -124,6 +124,7 @@ cp tmp_water.tif $dataDir/water.tif
 cd $dataDir
 unzip tmp_alb.zip
 
+cd $projectDir
 ./plot_eastern.R
 ./plot_western.R
 

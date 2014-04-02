@@ -40,14 +40,20 @@ out = runMCMC(y = data$taxon, cell = NULL, C = nbhd, town = data$town,
 
 # post process to get draws of proportions
 outputNcdfName <- paste0('PLScomposition_eastern_', productVersion, fnAdd, '.nc')
-makeAlbersNetCDF(name = 'proportion', units = 'unitless (proportion from 0 to 1)', longname = 'relative composition, relative to all tree taxa,', fn = outputNcdfName, dir = outputDir, x = xGrid[easternDomainX], y = yGrid[easternDomainY], taxa = taxa$taxonName, numSamples = floor(S/(thin*secondThin)))
+makeAlbersNetCDF(name = 'proportion', units = 'unitless (proportion from 0 to 1)',
+                 longname = 'relative composition, relative to all tree taxa,',
+                 fn = outputNcdfName, dir = outputDir, x = xGrid[easternDomainX],
+                 y = yGrid[easternDomainY], taxa = taxa$taxonName,
+                 numSamples = floor(S/(thin*secondThin)))
 
 latentNcdfPtr <- nc_open(file.path(dataDir, latentNcdfName))
 outputNcdfPtr <- nc_open(file.path(outputDir, outputNcdfName), write = TRUE)
 
 # this draws the proportions based on the draws of the latent variables
 set.seed(seed)
-drawProportions(latentNcdfPtr, outputNcdfPtr, numMCsamples = numSamplesForProps, numInputSamples = floor(S/thin), secondThin = secondThin, I = m1*m2, taxa = taxa$taxonName)
+drawProportions(latentNcdfPtr, outputNcdfPtr, numMCsamples = numSamplesForProps,
+                numInputSamples = floor(S/thin), secondThin = secondThin,
+                I = m1*m2, taxa = taxa$taxonName)
 
 warning("remember to augment eastern domain to include the areas with no info, or just warn Jackie")
 
