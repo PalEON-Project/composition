@@ -1,0 +1,37 @@
+Level 3a,Level 3 - settlement vegetation model,omit eastern,omit western
+Alder,Other hardwood,no,no
+Ash,Ash,no,no          
+Atlantic white cedar,Atlantic white cedar,no,yes
+Bald cypress,None,yes,yes
+Basswood,Basswood,no,no               
+Beech,Beech,no,no               
+Birch,Birch,no,no                  
+Black gum/sweet gum,Black gum/sweet gum,no,no    
+Buckeye,Other hardwood,no,no
+Cedar/juniper,Cedar/juniper,no,no          
+Chestnut,Chestnut,no,yes
+Cherry,Other hardwood,no,no
+Dogwood,Other hardwood,no,no
+Elm,Elm,no,no                  
+Fir,Fir,no,no                    
+Hackberry,Other hardwood,no,no
+Hemlock,Hemlock,no,no                
+Hickory,Hickory,no,no                
+Ironwood,Ironwood,no,no               
+Locust,Other hardwood,no,no
+Maple,Maple,no,no                  
+Mulberry,Other hardwood,no,no
+No tree,None,yes,yes
+Oak,Oak,no,no                    
+Other hardwood,Other hardwood,no,no
+Pine,Pine,no,no
+Poplar,Poplar/tulip poplar,no,no                  
+Poplar/tulip poplar,Poplar/tulip poplar,no,no    
+Spruce,Spruce,no,no                 
+Sycamore,Other hardwood,no,no
+Tamarack,Tamarack,no,no 
+Tulip poplar,Poplar/tulip poplar,no,no              
+Unknown,None,yes,yes
+Unknown tree,None,yes,yes
+Walnut,Walnut,no,no          
+Willow,Other hardwood,no,no        
