@@ -104,25 +104,24 @@ cat("\n")
 nameConversions <- taxaInfo[c("Level.3a", "Level.3s")][taxaInfo[["Level.3a"]] != taxaInfo[["Level.3s"]] & !(taxaInfo[["Level.3s"]] %in% c("Other hardwood", "None")), ]
 names(nameConversions) <- c('from', 'to')
 
-browser()
-
 numConv <- nrow(nameConversions)
 if(numConv) {
   for(i in seq_len(numConv)) {
-    if(!(nameConversions$to[i] %in% taxaUse)) {
-      warning(paste0("one or more names in name conversions file not in file of taxa to use:", nameConversions$to[i], " ", nameConversions$from[i]))
-    } else {
-      if(nameConversions$from[i] %in% names(data1)) 
+    if(nameConversions$from[i] %in% names(data1)) 
+      if(nameConversions$to[i] %in% names(data1)) {
         data1[nameConversions$to[i]] <- data1[nameConversions$to[i]] + data1[nameConversions$from[i]]
-      if(nameConversions$from[i] %in% names(data1)) 
-        data2[nameConversions$to[i]] <- data2[nameConversions$to[i]] + data2[nameConversions$from[i]]
-    }
+      } else data1[nameConversions$to[i]] <- data1[nameConversions$from[i]]
+    if(nameConversions$from[i] %in% names(data2))
+       if(nameConversions$to[i] %in% names(data2)) {
+         data2[nameConversions$to[i]] <- data2[nameConversions$to[i]] + data2[nameConversions$from[i]]
+       } else data2[nameConversions$to[i]] <- data2[nameConversions$from[i]]
   }
+  if(nameConversions$from[i] %in% c(names(data1), names(data2)))
+    cat("Grouping ", nameConversions$from[i], " into ", nameConversions$to[i], ".\n")
+
   data1 <- data1[ , !(names(data1) %in% nameConversions$from)]
   data2 <- data2[ , !(names(data2) %in% nameConversions$from)]
 }
-
-browser()
 
 allTaxa <- c(taxaOtherHardwood, taxaUse)
 zeros <- allTaxa[!(allTaxa %in% names(data1))]

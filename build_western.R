@@ -33,7 +33,6 @@ data[is.na(data)] <- 0
 ########################################################################
 # subset and manipulate taxa ------------------------------------
 ########################################################################
-browser()
 
 taxaInfo <- read.csv(paste0('level3s_', productVersion, '.csv'),
                      stringsAsFactors = FALSE)
@@ -56,31 +55,26 @@ cat("\n")
 nameConversions <- taxaInfo[c("Level.3a", "Level.3s")][taxaInfo[["Level.3a"]] != taxaInfo[["Level.3s"]] & !(taxaInfo[["Level.3s"]] %in% c("Other hardwood", "None")), ]
 names(nameConversions) <- c('from', 'to')
 
-browser()
-
 numConv <- nrow(nameConversions)
 if(numConv) {
   for(i in seq_len(numConv)) {
-    if(!(nameConversions$to[i] %in% taxaUse)) {
-      warning(paste0("one or more names in name conversions file not in file of taxa to use:", nameConversions$to[i], " ", nameConversions$from[i]))
-    } else {
-      if(nameConversions$from[i] %in% names(data)) 
+    if(nameConversions$from[i] %in% names(data)) {
+      cat("Grouping ", nameConversions$from[i], " into ", nameConversions$to[i], ".\n")
+      if(nameConversions$to[i] %in% names(data)) {
         data[nameConversions$to[i]] <- data[nameConversions$to[i]] + data[nameConversions$from[i]]
+      } else data[nameConversions$to[i]] <- data[nameConversions$from[i]]
     }
   }
-
   data <- data[ , !(names(data) %in% nameConversions$from)]
 }
 
-browser()
-
-ord <- order(names(data))
-
-data <- data[ , ord]
 
 other <- rowSums(data[ , taxaOtherHardwood])
 
 data <- data[ , taxaUse]
+ord <- order(names(data))
+data <- data[ , ord]
+
 data$"Other hardwood" <- other
 
 nTaxa <- ncol(data)
