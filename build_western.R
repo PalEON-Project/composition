@@ -33,49 +33,54 @@ data[is.na(data)] <- 0
 ########################################################################
 # subset and manipulate taxa ------------------------------------
 ########################################################################
+browser()
 
-taxaUse <- scan("westernTaxaUse", what = "character", sep = ',')
-taxaOther <- scan("westernTaxaOtherHardwood", what = "character", sep = ',')
-taxaNonTree <- scan("westernTaxaNonTree", what = "character", sep = ',')
+taxaInfo <- read.csv(paste0('level3s_', productVersion, '.csv'),
+                     stringsAsFactors = FALSE)
+taxaInfo[ , ncol(taxaInfo)] <- gsub("\\s", "", taxaInfo[ , ncol(taxaInfo)])  # strip any (trailing) whitespace
 
-tmp <- c(taxaUse, taxaOther, taxaNonTree)
-if(length(tmp) != length(unique(tmp)))
-  warning("One or more taxa in the 'use', 'other', 'non-tree' categories overlap.")
+taxaOtherHardwood <- taxaInfo[["Level.3a"]][taxaInfo[["Level.3s"]] == "Other hardwood"]
+taxaUse <- unique(taxaInfo[["Level.3s"]][!(taxaInfo[["Level.3s"]] %in% c("Other hardwood", "None")) & taxaInfo[["omit.western"]] == "no"])
+taxaNonTree <- taxaInfo[["Level.3a"]][taxaInfo[["Level.3s"]] == "None"]
 
-nameConversions <- read.csv("westernTaxaNameConversions", header = TRUE, stringsAsFactors = FALSE)
-
-otherNames <- names(data)[!(names(data) %in% c(taxaUse, taxaOther, taxaNonTree))]
-
+otherNames <- unique(names(data))[!(names(data) %in% taxaInfo[["Level.3a"]])]
 if(length(otherNames)) {
-  cat("Found these additional taxa categories, adding them to 'other':")
-  cat(otherNames)
+  cat("Warning: Found these additional taxa categories, ignoring them:")
+  cat(otherNames, sep = ',')
 }
 
-taxaOther <- c(taxaOther, otherNames)
-
-other <- rowSums(data[ , taxaOther])
-data <- data[ , taxaUse]
-
 cat("Grouping the following taxa into an 'Other hardwood' category:")
-cat(taxaOther, sep = ',')
+cat(taxaOtherHardwood, sep = ',')
 cat("\n")
+
+nameConversions <- taxaInfo[c("Level.3a", "Level.3s")][taxaInfo[["Level.3a"]] != taxaInfo[["Level.3s"]] & !(taxaInfo[["Level.3s"]] %in% c("Other hardwood", "None")), ]
+names(nameConversions) <- c('from', 'to')
+
+browser()
 
 numConv <- nrow(nameConversions)
 if(numConv) {
   for(i in seq_len(numConv)) {
-    if(!(nameConversions$to[i] %in% taxaUse) || !(nameConversions$from[i] %in% taxaUse)) {
+    if(!(nameConversions$to[i] %in% taxaUse)) {
       warning(paste0("one or more names in name conversions file not in file of taxa to use:", nameConversions$to[i], " ", nameConversions$from[i]))
     } else {
-      data[nameConversions$to[i]] <- data[nameConversions$to[i]] + data[nameConversions$from[i]]
+      if(nameConversions$from[i] %in% names(data)) 
+        data[nameConversions$to[i]] <- data[nameConversions$to[i]] + data[nameConversions$from[i]]
     }
   }
+
   data <- data[ , !(names(data) %in% nameConversions$from)]
-  taxaUse <- taxaUse[!(taxaUse%in% nameConversions$from)]
 }
+
+browser()
 
 ord <- order(names(data))
 
 data <- data[ , ord]
+
+other <- rowSums(data[ , taxaOtherHardwood])
+
+data <- data[ , taxaUse]
 data$"Other hardwood" <- other
 
 nTaxa <- ncol(data)
@@ -83,7 +88,7 @@ taxaUse <- names(data)
 
 taxa <- data.frame(taxonID = 1:nTaxa, taxonName = taxaUse, stringsAsFactors = FALSE)
 
-cat("Using the following", nTaxa, "taxa, with", sum(data), "trees, of which", round(100*sum(data$Other)/sum(data), 2), "% are in the 'other' category:")
+cat("Using the following", nTaxa, "taxa, with", sum(data), "trees, of which", round(100*sum(data$"Other hardwood")/sum(data), 2), "% are in the 'other' category:")
 cat(taxaUse, sep = ",")
 cat("\n")
 
