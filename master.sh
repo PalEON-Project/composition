@@ -16,6 +16,14 @@ function wgetWiki() {
     wget --load-cookies=${dataDir}/my-cookies.txt --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies $1 -O $2
 }
 
+########################################################################
+# download meta info    ------------------------------------------------
+########################################################################
+
+# get taxon conversion table
+cd $projectDir
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Blevel3s_${productVersion}.csv" -O level3s_${productVersion}.csv
+
 
 ########################################################################
 # download western data ------------------------------------------------
