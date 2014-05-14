@@ -22,7 +22,7 @@ function wgetWiki() {
 
 # get taxon conversion table
 cd $projectDir
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Blevel3s_${productVersion}.csv" -O level3s_${productVersion}.csv
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Blevel3s_v${productVersion}.csv" -O level3s_v${productVersion}.csv
 
 
 ########################################################################

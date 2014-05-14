@@ -83,7 +83,7 @@ data2[is.na(data2)] <- 0
 # subset and manipulate taxa ------------------------------------
 ########################################################################
 
-taxaInfo <- read.csv(paste0('level3s_', productVersion, '.csv'),
+taxaInfo <- read.csv(paste0('level3s_v', productVersion, '.csv'),
                      stringsAsFactors = FALSE)
 taxaInfo[ , ncol(taxaInfo)] <- gsub("\\s", "", taxaInfo[ , ncol(taxaInfo)])  # strip any (trailing) whitespace
 
