@@ -22,3 +22,6 @@ leave out mulberry as not in east town and probably rare
 cherry (1700) and sycamore (1200) not modelled but gum (2200) and walnut(2800) are
 
 west should have all 21 eastern taxa but no white cedar or chestnut since zero trees
+
+7/12/14:
+added lindgren_nu1 branch that has Lindgren model with nu=1 and (for now) no boundary correction; this has RW on log(rho)=eta, with joint sampling of rho,alpha

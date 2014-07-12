@@ -103,6 +103,11 @@ m1 <- length(westernDomainX)
 m2 <- length(westernDomainY)
 nCells <- m1 * m2
 
+type <- nbhdStructure
+substring(type, 1 ,1) = toupper(substring(type, 1, 1))
+graphFileName <- paste('graph', type, '-',  m1, 'x', m2, '.csv', sep='')
+catsFileName <- paste('graphCats', type, '-', m1, 'x', m2, '.csv', sep='')
+
 if(!file.exists(file.path(dataDir, graphFileName)) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, catsFileName))))
   fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir)
 

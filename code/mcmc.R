@@ -45,7 +45,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   
   sigma_propSD <- rep(0.02, P)
   # Lindgren; eta = log(rho); rho = 1/kappa; kappa^2 = a-4
-  eta_propSD <- 0.02  # eta likely between 0 and 5
+  eta_propSD <- rep(0.15, P)  # eta likely between 0 and 5 # .02
   # modify this to do adaptive
   numAcceptSigma2 <- rep(0, P)
   numAcceptEta <- rep(0, P)
@@ -74,7 +74,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
 #    sigma2_current <- sigma2_next <- rep(1,P)
     sigma2_current <- sigma2_next <- runif(P, 0.1, 3)
-    eta_current <- eta_next <- runif(P, 0, 5)
+    eta_current <- eta_next <- runif(P, 0, 5) # rep(log(3), P)
   }
 
   n <- rep(0, I)
@@ -137,14 +137,12 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
     # summarize the W's
     Wi.pbar<-compute_cell_sums_cpp(W,cell,I,P)/c(n+1*(n==0))
-#    joint_sample <- FALSE
-#    if(s == 301) browser()
 
     # update alpha's and sigma2's
    if(joint_sample) {
     if(!identical(hyperpar, c(-0.5, 0)))
       stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
-    
+
     for(p in 1:P){
         
         sigma2_next[p] <- (rnorm(1, sqrt(sigma2_current[p]), sigma_propSD[p]))^2
@@ -164,7 +162,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           
           U <- update.spam.chol.NgPeyton(U, B)
           
-          denominator <- -(I-1)*log(sigma2_current[p])/2 - sum(log(diag(U)))
+          denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
           UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
           denominator <- denominator + 0.5*sum(UtWi^2)
           
@@ -181,7 +179,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           
           U <- update.spam.chol.NgPeyton(U, B)
           
-          numerator <- -(I-1)*log(sigma2_next[p])/2 - sum(log(diag(U)))
+          numerator <- -(I)*log(sigma2_next[p])/2 - sum(log(diag(U)))
           UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
           numerator <- numerator + 0.5*sum(UtWi^2)
           
@@ -220,8 +218,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       alpha_next[,p] <- means + backsolve(U, rnorm(I))
       
       ss <- sigma2_current[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
-      sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I-1)/2, scale = 1/(.5*ss + hyperpar[2])) 
-      # need I-1 because of the zero eigenvalue in the precision matrix
+      sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I)/2, scale = 1/(.5*ss + hyperpar[2])) 
+      # need I-1 because of the zero eigenvalue in the precision matrix (but not for Lindgren)
 
       if(is.na(sigma2_next[p])) { # sigma2 too small
         sigma2_next[p] <- sigma2_current[p]
@@ -251,7 +249,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         
         U <- update.spam.chol.NgPeyton(U, B)
         
-        denominator <- -(I-1)*log(sigma2_current[p])/2 - sum(log(diag(U)))
+        denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
         UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
         denominator <- denominator + 0.5*sum(UtWi^2)
         denominator <- denominator + eta_current[p]
@@ -269,7 +267,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         
         U <- update.spam.chol.NgPeyton(U, B)
         
-        numerator <- -(I-1)*log(sigma2_current[p])/2 - sum(log(diag(U)))
+        numerator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
         UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
         numerator <- numerator + 0.5*sum(UtWi^2)
         numerator <- numerator + eta_next[p]
@@ -289,7 +287,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
     eta_current <- eta_next
     alpha_current  <- alpha_next
- 
+#    print(c(s, exp(eta_current)))
 
     # sample cell indices
     if(areallyAggregated) {
@@ -324,6 +322,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       numAcceptSigma2 <- rep(0, nTaxa)
       cat("Acceptance rate for eta/alpha joint proposals: ", round(numAcceptEta/adaptInterval, 2), ".\n", sep = " ")
       numAcceptEta <- rep(0, nTaxa)
+      print(c(s, exp(eta_current)))
     }
     
     if(s %% 250 == 0) {
