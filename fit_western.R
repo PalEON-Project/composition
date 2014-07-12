@@ -29,7 +29,7 @@ if(!resumeRun) {
 
 # this creates netCDF with draws of the latent variables
 # change to signature of new runMCMC that allows township data
-out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, numCores = numCoresToUse, runID = paste0("-western-run", uniqueRunID), dataDir = dataDir, outputDir = outputDir)
+out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, Cindices = nbhdIndices, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, numCores = numCoresToUse, runID = paste0("-western-run", uniqueRunID), dataDir = dataDir, outputDir = outputDir)
 
 
 # post process to get draws of proportions

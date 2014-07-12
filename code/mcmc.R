@@ -2,12 +2,15 @@ source('code/mcmcAuxil.R')
 
 library(spam)
 
-runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townCellIds = NULL,
+runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOverlap = NULL, townCellIds = NULL,
                    S, thin, resumeRun, hyperpar = c(-0.5, 0),
                    joint_sample = TRUE, adaptInterval = 100, adaptStartTaper = 3000,                   
-                   rho = NULL, areallyAggregated = FALSE, outputNcdfName, taxa, numCores = 1, runID = "",
+                   areallyAggregated = FALSE, outputNcdfName, taxa, numCores = 1, runID = "",
                    dataDir, outputDir) {
 
+  if(is.null(Cindices))
+    # FIXME: deal with bin vs Lindgren better in terms of args to runMCMC() and conditionality in the code here
+    stop("This code is set up to use the Lindgren model with nu=1")
   
   exclude <- is.na(y)
   if(areallyAggregated) {
@@ -36,11 +39,16 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
   }
     
   P <- length(taxa$taxonName)
-  I<-nrow(C)
- 
+  I <- nrow(C)
+
+  etaBounds <- c(0, 5)
+  
   sigma_propSD <- rep(0.02, P)
+  # Lindgren; eta = log(rho); rho = 1/kappa; kappa^2 = a-4
+  eta_propSD <- 0.02  # eta likely between 0 and 5
   # modify this to do adaptive
-  numAccept <- rep(0, P)
+  numAcceptSigma2 <- rep(0, P)
+  numAcceptEta <- rep(0, P)
 
 
   infs <- rep(Inf, N)
@@ -60,12 +68,13 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
 
     W <- matrix(0, N, P)
     
-    sigma2store <- matrix(0, S_keep, P)
+    sigma2store <- etaStore <- matrix(0, S_keep, P)
     #alpha_current <- alpha_next <- matrix(0, I, P)
     alpha_current <- alpha_next <- matrix(rnorm(I*P), I, P)
 
 #    sigma2_current <- sigma2_next <- rep(1,P)
     sigma2_current <- sigma2_next <- runif(P, 0.1, 3)
+    eta_current <- eta_next <- runif(P, 0, 5)
   }
 
   n <- rep(0, I)
@@ -74,14 +83,12 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
   
   Wi.pbar<-matrix(0, I, P)
     
-  if(is.null(rho)) {
-    Vinv    <- C
-  } else {
-    Vinv <- rho*C
-    diag(Vinv) <- diag(Vinv) + 1
-  }
+  Vinv <- C  # start with TPS
+  a <- 4 + 1/exp(2*eta_current[1])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+  Vinv@entries[Cindices$self] <- 4 + a*a
+  Vinv@entries[Cindices$cardNbr] <- -2 * a
 
-  # do initial Cholesky based on sparseness pattern
+  # do initial Cholesky based on sparseness pattern, with first taxon
   B <- Vinv
   diag(B) <- diag(B) + n
   if(!is.spam(B)) warning("B is not spam")
@@ -146,13 +153,12 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
         } else {
 
           # terms for reverse proposal
-          if(is.null(rho)) {
-            Vinv <- C / sigma2_current[p]
-          } else{
-            Vinv <- rho*C
-            diag(Vinv) <- diag(Vinv) + 1
-            Vinv <- Vinv / sigma2_current[p] 
-          }
+          Vinv <- C  # start with TPS
+          a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+          Vinv@entries[Cindices$self] <- 4 + a*a
+          Vinv@entries[Cindices$cardNbr] <- -2 * a
+          Vinv <- C / sigma2_current[p]
+
           B <- Vinv
           diag(B) <- diag(B) + n
           
@@ -163,13 +169,13 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
           denominator <- denominator + 0.5*sum(UtWi^2)
           
           # terms for forward proposal
-          if(is.null(rho)) {
-            Vinv <- C / sigma2_next[p]
-          } else{
-            Vinv <- rho*C
-            diag(Vinv) <- diag(Vinv) + 1
-            Vinv <- Vinv / sigma2_next[p] 
-          }
+          Vinv <- C  # start with TPS
+          a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+          Vinv@entries[Cindices$self] <- 4 + a*a
+          Vinv@entries[Cindices$cardNbr] <- -2 * a
+          Vinv <- C / sigma2_next[p]
+          # simplify as Vinv from above *sigma2_current[p]/sigma2_next[p]
+          
           B <- Vinv
           diag(B) <- diag(B) + n
           
@@ -182,7 +188,7 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
           accept <- decide(numerator - denominator)
         }
         if(accept) {
-          numAccept[p] <- numAccept[p] + 1
+          numAcceptSigma2[p] <- numAcceptSigma2[p] + 1
           # sample alphas
           means <- backsolve(U, UtWi)
           alpha_next[,p] <- means + backsolve(U, rnorm(I))
@@ -199,13 +205,11 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
                                         # for the moment, also include the non-joint sample as well so that alphas can move on their own; this adds about a second per iteration
     for(p in 1:P){
       
-      if(is.null(rho)) {
-        Vinv <- C / sigma2_current[p]
-      } else{
-        Vinv <- rho*C
-        diag(Vinv) <- diag(Vinv) + 1
-        Vinv <- Vinv / sigma2_current[p] 
-      }
+      Vinv <- C  # start with TPS
+      a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+      Vinv@entries[Cindices$self] <- 4 + a*a
+      Vinv@entries[Cindices$cardNbr] <- -2 * a
+      Vinv <- C / sigma2_current[p]
       
       B <- Vinv
       diag(B) <- diag(B) + n
@@ -227,6 +231,65 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
     sigma2_current <- sigma2_next
     alpha_current  <- alpha_next
 
+    # eta sample
+    for(p in 1:P){
+      
+      eta_next[p] <- rnorm(1, eta_current[p], eta_propSD[p])
+      if(eta_next[p] < etaBounds[1] || eta_next[p] > etaBounds[2]) {
+        accept <- FALSE 
+      } else {
+        
+                                        # terms for reverse proposal
+        Vinv <- C  # start with TPS
+        a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+        Vinv@entries[Cindices$self] <- 4 + a*a
+        Vinv@entries[Cindices$cardNbr] <- -2 * a
+        Vinv <- C / sigma2_current[p]
+        
+        B <- Vinv
+        diag(B) <- diag(B) + n
+        
+        U <- update.spam.chol.NgPeyton(U, B)
+        
+        denominator <- -(I-1)*log(sigma2_current[p])/2 - sum(log(diag(U)))
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
+        denominator <- denominator + 0.5*sum(UtWi^2)
+        denominator <- denominator + eta_current[p]
+        
+                                        # terms for forward proposal
+        Vinv <- C  # start with TPS
+        a <- 4 + 1/exp(2*eta_next[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+        Vinv@entries[Cindices$self] <- 4 + a*a
+        Vinv@entries[Cindices$cardNbr] <- -2 * a
+        Vinv <- C / sigma2_current[p]
+                                        # simplify as Vinv from above *eta_current[p]/eta_next[p]
+        
+        B <- Vinv
+        diag(B) <- diag(B) + n
+        
+        U <- update.spam.chol.NgPeyton(U, B)
+        
+        numerator <- -(I-1)*log(sigma2_current[p])/2 - sum(log(diag(U)))
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
+        numerator <- numerator + 0.5*sum(UtWi^2)
+        numerator <- numerator + eta_next[p]
+       
+        accept <- decide(numerator - denominator)
+      }
+      if(accept) {
+        numAcceptEta[p] <- numAcceptEta[p] + 1
+                                        # sample alphas
+        means <- backsolve(U, UtWi)
+        alpha_next[,p] <- means + backsolve(U, rnorm(I))
+      } else {
+        eta_next[p] <- eta_current[p]
+        alpha_next[,p] <- alpha_current[,p]
+      }
+    }
+
+    eta_current <- eta_next
+    alpha_current  <- alpha_next
+ 
 
     # sample cell indices
     if(areallyAggregated) {
@@ -245,6 +308,7 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
     if (s%%thin==0){
       outputNcdfPtr <- nc_open(file.path(dataDir, outputNcdfName), write = TRUE)
       sigma2store[storeIndex, ] <- sigma2_next
+      etaStore[storeIndex, ] <- eta_next
       for(p in 1:P) 
         ncvar_put(outputNcdfPtr, taxa$taxonName[p], matrix(alpha_next[ , p], m1, m2) , start = c(1, 1, storeIndex), count = c(-1, -1, 1))
       nc_close(outputNcdfPtr)
@@ -256,16 +320,19 @@ runMCMC <-function(y, cell = NULL, C, town = NULL, townCellOverlap = NULL, townC
       cat("Finished MCMC iteration ", s, " at ", date(), ".\n", sep = "")
 
     if(s%%adaptInterval == 0) {
-      cat("Acceptance rate for sigma/alpha joint proposals: ", round(numAccept/adaptInterval, 2), ".\n", sep = " ")
-      numAccept <- rep(0, nTaxa)
+      cat("Acceptance rate for sigma/alpha joint proposals: ", round(numAcceptSigma2/adaptInterval, 2), ".\n", sep = " ")
+      numAcceptSigma2 <- rep(0, nTaxa)
+      cat("Acceptance rate for eta/alpha joint proposals: ", round(numAcceptEta/adaptInterval, 2), ".\n", sep = " ")
+      numAcceptEta <- rep(0, nTaxa)
     }
     
     if(s %% 250 == 0) {
-      save(alpha_next, sigma2_next, s, cell, .Random.seed, W, sigma2store, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
+      save(alpha_next, sigma2_next, eta_next, s, cell, .Random.seed, W, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
     }
   } # end for s loop
 
   save(sigma2store, file = file.path(outputDir, paste0("sigma2", runID, ".Rda")))
+  save(etaStore, file = file.path(outputDir, paste0("eta", runID, ".Rda")))
   invisible(NULL)
 }
 
