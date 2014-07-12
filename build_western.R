@@ -103,12 +103,21 @@ m1 <- length(westernDomainX)
 m2 <- length(westernDomainY)
 nCells <- m1 * m2
 
-tmp <- nbhdStructure
-substring(tmp, 1 ,1) <- toupper(substring(tmp, 1, 1))
-graphFileName <- paste0('graph', tmp, m1, 'x', m2, '.csv')
-if(!file.exists(file.path(dataDir, graphFileName)))
-  graphCreate(m1, m2, type = nbhdStructure, dir = dataDir, fn = graphFileName)
-nbhd <- graphRead(file.path(dataDir, graphFileName), m1, m2)
+if(!file.exists(file.path(dataDir, graphFileName)) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, catsFileName))))
+  fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir)
+
+nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure)
+
+if(nbhdStructure == "lindgren_nu1") {
+  # remove boundary stuff for now while wait to hear from Finn about boundary correction
+  nbhd@entries[nbhd@entries %in% c(-4, -6)] <- -8
+  nbhd@entries[nbhd@entries %in% c(4, 10, 11, 18, 19)] <- 20
+  nbhdIndices <- list()
+  # determine which elements correspond to what types of neighbors for fast filling in MCMC
+  nbhdIndices$self <- which(nbhd@entries == 20)
+  nbhdIndices$cardNbr <- which(nbhd@entries == -8)
+  nbhdIndices$otherNbr <- which(nbhd@entries %in% c(1,2))
+} else nbhdIndices <- NULL
 
 
 ########################################################################
@@ -124,4 +133,4 @@ cell <- rep(which(total > 0), times = total[total > 0])
 
 data <- data.frame(taxon = taxon, cell = cell)
 
-save(nbhd, m1, m2, nTaxa, nCells, data, coord, taxa, file = paste0(file.path(dataDir, 'westernData.Rda')))
+save(nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = paste0(file.path(dataDir, 'westernData.Rda')))
