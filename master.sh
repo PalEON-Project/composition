@@ -45,14 +45,14 @@ cd $projectDir
 # preprocess western data ----------------------------------------------
 ########################################################################
 
-./build_western.R >& log.build_western${uniqueRunID} &
+./build_western.R >& log.build_western_${productVersion}-${uniqueRunID} &
 # this creates 'westernData.Rda'
 
 ########################################################################
 # fit Bayesian composition model to western data -----------------------
 ########################################################################
 
-./fit_western.R >& log.fit_western${uniqueRunID} &
+./fit_western.R >& log.fit_western_${productVersion}-${uniqueRunID} &
 # this creates 'PLScomposition_western_${productVersion}.nc'
 
 ########################################################################
@@ -86,7 +86,7 @@ cd $projectDir
 ./intersect_towns_cells.R  >& log.intersect_towns_cells &
 # creates intersection.Rda
 
-./build_eastern.R  >& log.build_eastern${uniqueRunID} &
+./build_eastern.R  >& log.build_eastern_${productVersion}${uniqueRunID} &
 # this reads intersection.Rda and creates easternData.Rda
 
 
@@ -95,7 +95,7 @@ cd $projectDir
 ########################################################################
 
 export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
-./fit_eastern.R >& log.fit_eastern${uniqueRunID} &
+./fit_eastern.R >& log.fit_eastern_${productVersion}${uniqueRunID} &
 # this creates 'PLScomposition_eastern_${productVersion}.nc'
 
 ########################################################################

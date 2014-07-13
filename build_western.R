@@ -105,13 +105,14 @@ nCells <- m1 * m2
 
 type <- nbhdStructure
 substring(type, 1 ,1) = toupper(substring(type, 1, 1))
-graphFileName <- paste('graph', type, '-',  m1, 'x', m2, '.csv', sep='')
-catsFileName <- paste('graphCats', type, '-', m1, 'x', m2, '.csv', sep='')
+fns <- rep("", 2)
+fns[1] <- paste('graph', type, '-',  m1, 'x', m2, '.csv', sep='')
+fns[2] <- paste('graphCats', type, '-', m1, 'x', m2, '.csv', sep='')
 
-if(!file.exists(file.path(dataDir, graphFileName)) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, catsFileName))))
+if(!file.exists(file.path(dataDir, fns[1])) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, fns[2]))))
   fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir)
 
-nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure)
+nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure, dir = dataDir)
 
 if(nbhdStructure == "lindgren_nu1") {
   # remove boundary stuff for now while wait to hear from Finn about boundary correction

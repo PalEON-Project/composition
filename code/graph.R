@@ -1,8 +1,9 @@
 # auxiliary code for creating the graph structure for binary (standard CAR-style) or thin-plate spline neighborhoods
 
-graphCreate <- function(m1, m2, type = "bin", dir = "", fn = NULL, fn_cats = NULL) {
+graphCreate <- function(m1, m2, type = "bin", dir = getwd(), fn = NULL, fn_cats = NULL) {
   # this creates a file with nbhd info; cells are numbered from NW to NE and then in latitude/y rows
   # cells are numbered starting with 0
+
   m=m1*m2
   ids=0:(m-1)
   xgr=0:(m1-1)
@@ -75,9 +76,10 @@ graphCreate <- function(m1, m2, type = "bin", dir = "", fn = NULL, fn_cats = NUL
   return(c(fn, fn_cats))
 }
 
-graphRead <- function(fileName, catsFileName = "", m1, m2, type = 'bin') {
+graphRead <- function(fileName, catsFileName = "", m1, m2, type = 'bin', dir = getwd()) {
   # reads graph structure from file created by graphCreate() and produces sparse matrix precision matrix representing neighborhood structure
   require(spam)
+  
   if(type %in% c("tps", "lindgren_nu1")){
     map=c(rep(0,4),4,0,10,11,0,18,19,20)
   } else{
@@ -86,9 +88,9 @@ graphRead <- function(fileName, catsFileName = "", m1, m2, type = 'bin') {
   m = m1*m2
   
   Q=as.spam(diag(rep(1,2)))
-  graphVals=as.integer(scan(fileName))
+  graphVals=as.integer(scan(file.path(dir, fileName)))
   if(type %in% c("tps", "lindgren_nu1"))
-    cats=scan(catsFileName)
+    cats=scan(file.path(dir, catsFileName))
   
   Q@dimension=c(graphVals[1],graphVals[1])
   dim=Q@dimension[1]

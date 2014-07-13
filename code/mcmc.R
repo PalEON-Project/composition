@@ -201,6 +201,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     alpha_current  <- alpha_next
     
                                         # for the moment, also include the non-joint sample as well so that alphas can move on their own; this adds about a second per iteration
+    if(FALSE) {
     for(p in 1:P){
       
       Vinv <- C  # start with TPS
@@ -228,7 +229,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     }
     sigma2_current <- sigma2_next
     alpha_current  <- alpha_next
-
+  }
     # eta sample
     for(p in 1:P){
       

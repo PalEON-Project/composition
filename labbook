@@ -25,3 +25,5 @@ west should have all 21 eastern taxa but no white cedar or chestnut since zero t
 
 7/12/14:
 added lindgren_nu1 branch that has Lindgren model with nu=1 and (for now) no boundary correction; this has RW on log(rho)=eta, with joint sampling of rho,alpha
+
+arggh - running time is a lot longer because the precision matrices are not as sparse
