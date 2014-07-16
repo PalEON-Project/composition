@@ -41,11 +41,11 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   P <- length(taxa$taxonName)
   I <- nrow(C)
 
-  etaBounds <- c(0, 5)
+  etaBounds <- c(log(.1), 5)
   
   sigma_propSD <- rep(0.02, P)
   # Lindgren; eta = log(rho); rho = 1/kappa; kappa^2 = a-4
-  eta_propSD <- rep(0.03, P)  # eta likely between 0 and 5 # .02
+  eta_propSD <- rep(0.02, P)  # eta likely between 0 and 5 # .02
   # modify this to do adaptive
   numAcceptSigma2 <- rep(0, P)
   numAcceptEta <- rep(0, P)
@@ -155,7 +155,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
           Vinv@entries[Cindices$self] <- 4 + a*a
           Vinv@entries[Cindices$cardNbr] <- -2 * a
-          Vinv <- Vinv / sigma2_current[p]
+       Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
+          #Vinv <- Vinv / sigma2_current[p]
 
           B <- Vinv
           diag(B) <- diag(B) + n
@@ -171,7 +172,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
           Vinv@entries[Cindices$self] <- 4 + a*a
           Vinv@entries[Cindices$cardNbr] <- -2 * a
-          Vinv <- Vinv / sigma2_next[p]
+      Vinv <- Vinv / (sigma2_next[p]*4*pi/exp(2*eta_current[p]))
+#          Vinv <- Vinv / sigma2_next[p]
           # simplify as Vinv from above *sigma2_current[p]/sigma2_next[p]
           
           B <- Vinv
@@ -208,7 +210,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
       Vinv@entries[Cindices$self] <- 4 + a*a
       Vinv@entries[Cindices$cardNbr] <- -2 * a
-      Vinv <- Vinv / sigma2_current[p]
+      Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
+      
       
       B <- Vinv
       diag(B) <- diag(B) + n
@@ -243,7 +246,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
         Vinv@entries[Cindices$self] <- 4 + a*a
         Vinv@entries[Cindices$cardNbr] <- -2 * a
-        Vinv <- Vinv / sigma2_current[p]
+        Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
         
         B <- Vinv
         diag(B) <- diag(B) + n
@@ -260,7 +263,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         a <- 4 + 1/exp(2*eta_next[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
         Vinv@entries[Cindices$self] <- 4 + a*a
         Vinv@entries[Cindices$cardNbr] <- -2 * a
-        Vinv <- Vinv / sigma2_current[p]
+        Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_next[p]))
                                         # simplify as Vinv from above *eta_current[p]/eta_next[p]
         
         B <- Vinv
