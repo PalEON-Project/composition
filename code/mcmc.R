@@ -42,13 +42,16 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   I <- nrow(C)
 
   etaBounds <- c(log(.1), 5)
+    muBounds <- c(-10, 10)
   
   sigma_propSD <- rep(0.02, P)
+  mu_propSD <- rep(0.10, P)
   # Lindgren; eta = log(rho); rho = 1/kappa; kappa^2 = a-4
   eta_propSD <- rep(0.02, P)  # eta likely between 0 and 5 # .02
   # modify this to do adaptive
   numAcceptSigma2 <- rep(0, P)
   numAcceptEta <- rep(0, P)
+  numAcceptMu <- rep(0, P)
 
 
   infs <- rep(Inf, N)
@@ -68,12 +71,13 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
     W <- matrix(0, N, P)
     
-    sigma2store <- etaStore <- matrix(0, S_keep, P)
+    sigma2store <- muStore <-  etaStore <- matrix(0, S_keep, P)
     #alpha_current <- alpha_next <- matrix(0, I, P)
     alpha_current <- alpha_next <- matrix(rnorm(I*P), I, P)
 
 #    sigma2_current <- sigma2_next <- rep(1,P)
     sigma2_current <- sigma2_next <- runif(P, 0.1, 3)
+    mu_current <- mu_next <- runif(P, -2, 2)
     eta_current <- eta_next <- runif(P, 0, 5) # rep(log(3), P)
   }
 
@@ -93,7 +97,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   diag(B) <- diag(B) + n
   if(!is.spam(B)) warning("B is not spam")
   U <- chol(B)  
-    
+  Uc <- chol(Vinv)
+  
   # Gathering some indices outside the loop
 
   treeInd <- treeNonInd <- cellInd <- cellNonInd <- list() 
@@ -164,8 +169,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           U <- update.spam.chol.NgPeyton(U, B)
           
           denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
-          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
-          denominator <- denominator + 0.5*sum(UtWi^2)
+          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv))
+          denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
           
           # terms for forward proposal
           Vinv <- C  # start with TPS
@@ -182,8 +187,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           U <- update.spam.chol.NgPeyton(U, B)
           
           numerator <- -(I)*log(sigma2_next[p])/2 - sum(log(diag(U)))
-          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
-          numerator <- numerator + 0.5*sum(UtWi^2)
+          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+          numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
           
           accept <- decide(numerator - denominator)
         }
@@ -217,11 +222,11 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       diag(B) <- diag(B) + n
       
       U <- update.spam.chol.NgPeyton(U, B)
-      means <- backsolve(U, forwardsolve(U, Wi.pbar[ , p] * n))
+      means <- backsolve(U, forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv)))
       
       alpha_next[,p] <- means + backsolve(U, rnorm(I))
       
-      ss <- sigma2_current[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
+      ss <- sigma2_current[p] * t(alpha_next[,p] - mu_current[p]) %*% (Vinv %*% (alpha_next[,p] - mu_current[p]))
       sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I)/2, scale = 1/(.5*ss + hyperpar[2])) 
       # need I-1 because of the zero eigenvalue in the precision matrix (but not for Lindgren)
 
@@ -233,6 +238,67 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     sigma2_current <- sigma2_next
     alpha_current  <- alpha_next
   }
+
+    
+  # mu sample
+    for(p in 1:P){
+      
+      mu_next[p] <- rnorm(1, mu_current[p], mu_propSD[p])
+      if(mu_next[p] < muBounds[1] || mu_next[p] > muBounds[2]) {
+        accept <- FALSE
+      } else {
+        
+                                                                        # terms for reverse proposal
+        Vinv <- C  # start with TPS
+        a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+        Vinv@entries[Cindices$self] <- 4 + a*a
+        Vinv@entries[Cindices$cardNbr] <- -2 * a
+        Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
+        
+        B <- Vinv
+        diag(B) <- diag(B) + n
+        
+        U <- update.spam.chol.NgPeyton(U, B)
+
+        
+        denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U))) 
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+        denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+        
+                                        # terms for forward proposal
+        #Vinv <- C  # start with TPS
+        #a <- 4 + 1/exp(2*eta_next[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+        #Vinv@entries[Cindices$self] <- 4 + a*a
+        #Vinv@entries[Cindices$cardNbr] <- -2 * a
+        #Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_next[p]))
+                                        # simplify as Vinv from above *eta_current[p]/eta_next[p]
+        
+        #B <- Vinv
+        #diag(B) <- diag(B) + n
+        
+        #U <- update.spam.chol.NgPeyton(U, B)
+        
+        numerator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U))) 
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_next[p] * rowSums(Vinv))
+        numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_next[p]^2
+        
+        accept <- decide(numerator - denominator)
+      }
+      if(accept) {
+        numAcceptMu[p] <- numAcceptMu[p] + 1
+                                        # sample alphas
+        means <- backsolve(U, UtWi)
+        alpha_next[,p] <- means + backsolve(U, rnorm(I))
+      } else {
+        mu_next[p] <- mu_current[p]
+        alpha_next[,p] <- alpha_current[,p]
+      }
+    }
+    
+    mu_current <- mu_next
+    alpha_current  <- alpha_next
+    
+
     # eta sample
     for(p in 1:P){
       
@@ -252,10 +318,11 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         diag(B) <- diag(B) + n
         
         U <- update.spam.chol.NgPeyton(U, B)
+        Uc <- update.spam.chol.NgPeyton(Uc, Vinv)
         
-        denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
-        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
-        denominator <- denominator + 0.5*sum(UtWi^2)
+        denominator <-  - sum(log(diag(U))) + sum(log(diag(Uc)))
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+        denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
         denominator <- denominator + eta_current[p]
         
                                         # terms for forward proposal
@@ -270,10 +337,11 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         diag(B) <- diag(B) + n
         
         U <- update.spam.chol.NgPeyton(U, B)
+        Uc <- update.spam.chol.NgPeyton(Uc, Vinv)
         
-        numerator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
-        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n)
-        numerator <- numerator + 0.5*sum(UtWi^2)
+        numerator <-  - sum(log(diag(U))) + sum(log(diag(Uc)))
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+        numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
         numerator <- numerator + eta_next[p]
        
         accept <- decide(numerator - denominator)
@@ -310,6 +378,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     if (s%%thin==0){
       outputNcdfPtr <- nc_open(file.path(dataDir, outputNcdfName), write = TRUE)
       sigma2store[storeIndex, ] <- sigma2_next
+      muStore[storeIndex, ] <- mu_next
       etaStore[storeIndex, ] <- eta_next
       for(p in 1:P) 
         ncvar_put(outputNcdfPtr, taxa$taxonName[p], matrix(alpha_next[ , p], m1, m2) , start = c(1, 1, storeIndex), count = c(-1, -1, 1))
@@ -324,17 +393,20 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     if(s%%adaptInterval == 0) {
       cat("Acceptance rate for sigma/alpha joint proposals: ", round(numAcceptSigma2/adaptInterval, 2), ".\n", sep = " ")
       numAcceptSigma2 <- rep(0, nTaxa)
+      cat("Acceptance rate for mu/alpha joint proposals: ", round(numAcceptMu/adaptInterval, 2), ".\n", sep = " ")
+      numAcceptMu <- rep(0, nTaxa)
       cat("Acceptance rate for eta/alpha joint proposals: ", round(numAcceptEta/adaptInterval, 2), ".\n", sep = " ")
       numAcceptEta <- rep(0, nTaxa)
       print(c(s, exp(eta_current)))
     }
     
     if(s %% 250 == 0) {
-      save(alpha_next, sigma2_next, eta_next, s, cell, .Random.seed, W, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
+      save(alpha_next, sigma2_next, eta_next, mu_next, s, cell, .Random.seed, W, muStore, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
     }
   } # end for s loop
 
   save(sigma2store, file = file.path(outputDir, paste0("sigma2", runID, ".Rda")))
+    save(muStore, file = file.path(outputDir, paste0("mu", runID, ".Rda")))
   save(etaStore, file = file.path(outputDir, paste0("eta", runID, ".Rda")))
   invisible(NULL)
 }
