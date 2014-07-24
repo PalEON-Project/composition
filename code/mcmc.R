@@ -1,16 +1,16 @@
 source('code/mcmcAuxil.R')
 
 library(spam)
-
 runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOverlap = NULL, townCellIds = NULL,
                    S, thin, resumeRun, hyperpar = c(-0.5, 0),
-                   joint_sample = TRUE, adaptInterval = 100, adaptStartTaper = 3000,                   
+                   jointSample = TRUE, adaptInterval = 100, adaptStartDecay = 3000,                   
                    areallyAggregated = FALSE, outputNcdfName, taxa, numCores = 1, runID = "",
                    dataDir, outputDir) {
 
   if(is.null(Cindices))
     # FIXME: deal with bin vs Lindgren better in terms of args to runMCMC() and conditionality in the code here
     stop("This code is set up to use the Lindgren model with nu=1")
+
   
   exclude <- is.na(y)
   if(areallyAggregated) {
@@ -42,18 +42,31 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   I <- nrow(C)
 
   etaBounds <- c(log(.1), 5)
-    muBounds <- c(-10, 10)
-  
-  sigma_propSD <- rep(0.02, P)
+  muBounds <- c(-10, 10)
+
   mu_propSD <- rep(0.10, P)
-  # Lindgren; eta = log(rho); rho = 1/kappa; kappa^2 = a-4
-  eta_propSD <- rep(0.02, P)  # eta likely between 0 and 5 # .02
-  # modify this to do adaptive
-  numAcceptSigma2 <- rep(0, P)
-  numAcceptEta <- rep(0, P)
   numAcceptMu <- rep(0, P)
 
-
+  if(jointSample) {
+    joint_propSD <- rep(1, P)
+    adaptVals <- adaptedCov <- adaptedL <- list()
+    adaptScale <- rep(.01, P)
+    length(adaptScale) <- length(adaptVals) <- length(adaptedCov) <- length(adaptedL) <- P
+    for(p in seq_len(P)) {
+      adaptedCov[[p]] <- diag(rep(1, 2))
+      adaptedL[[p]] <- t(chol(adaptedCov[[p]]))
+      adaptVals[[p]] <- matrix(0, adaptInterval, 2)
+    }
+    numAcceptSigmaEta <- rep(0, P)
+  } else {
+    sigma_propSD <- rep(0.02, P)
+                                        # Lindgren; eta = log(rho); rho = 1/kappa; kappa^2 = a-4
+    eta_propSD <- rep(0.02, P)  # eta likely between 0 and 5 # .02
+                                        # modify this to do adaptive
+    numAcceptSigma2 <- rep(0, P)
+    numAcceptEta <- rep(0, P)
+  }
+  
   infs <- rep(Inf, N)
   negInfs <- rep(-Inf, N)
     
@@ -112,8 +125,13 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   
   nTreeInd  <- lapply(treeInd, length)
   nTreeNonInd <- lapply(treeNonInd, length)
-  
+
+  if(!identical(hyperpar, c(-0.5, 0)))
+    stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
+
+  count <- 0
   for(s in sampleIterates){
+    count <- count + 1
     
     # sample the latent W's
     for(p in 1:P){
@@ -143,71 +161,194 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     # summarize the W's
     Wi.pbar<-compute_cell_sums_cpp(W,cell,I,P)/c(n+1*(n==0))
 
-    # update alpha's and sigma2's
-   if(joint_sample) {
-    if(!identical(hyperpar, c(-0.5, 0)))
-      stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
-
+  # joint mu-alpha sample
     for(p in 1:P){
+      
+      mu_next[p] <- rnorm(1, mu_current[p], mu_propSD[p])
+      if(mu_next[p] < muBounds[1] || mu_next[p] > muBounds[2]) {
+        accept <- FALSE
+      } else {
         
-        sigma2_next[p] <- (rnorm(1, sqrt(sigma2_current[p]), sigma_propSD[p]))^2
-        if(sigma2_next[p] < 0) {
-          accept <- FALSE 
-        } else {
+                                                                        # terms for reverse proposal
+        Vinv <- C  # start with TPS
+        a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+        Vinv@entries[Cindices$self] <- 4 + a*a
+        Vinv@entries[Cindices$cardNbr] <- -2 * a
+        Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
+        
+        B <- Vinv
+        diag(B) <- diag(B) + n
+        
+        U <- update.spam.chol.NgPeyton(U, B)
 
-          # terms for reverse proposal
-          Vinv <- C  # start with TPS
-          a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
-          Vinv@entries[Cindices$self] <- 4 + a*a
-          Vinv@entries[Cindices$cardNbr] <- -2 * a
-       Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
+        
+        #denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U))) 
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+        denominator <- 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+        
+                                        # terms for forward proposal
+        #Vinv <- C  # start with TPS
+        #a <- 4 + 1/exp(2*eta_next[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+        #Vinv@entries[Cindices$self] <- 4 + a*a
+        #Vinv@entries[Cindices$cardNbr] <- -2 * a
+        #Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_next[p]))
+                                        # simplify as Vinv from above *eta_current[p]/eta_next[p]
+        
+        #B <- Vinv
+        #diag(B) <- diag(B) + n
+        
+        #U <- update.spam.chol.NgPeyton(U, B)
+        
+        #numerator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U))) 
+        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_next[p] * rowSums(Vinv))
+        numerator <- 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_next[p]^2
+        
+        accept <- decide(numerator - denominator)
+      }
+      if(accept) {
+        numAcceptMu[p] <- numAcceptMu[p] + 1
+                                        # sample alphas
+        means <- backsolve(U, UtWi)
+        alpha_next[,p] <- means + backsolve(U, rnorm(I))
+      } else {
+        mu_next[p] <- mu_current[p]
+        alpha_next[,p] <- alpha_current[,p]
+      }
+    }
+    
+    mu_current <- mu_next
+    alpha_current  <- alpha_next
+    
+
+    
+   if(jointSample) {
+   # update alphas and sigma2s    
+     for(p in 1:P){
+       prop <- adaptScale[p] * adaptedL[[p]] %*% rnorm(2)
+       sigma2_next[p] <- (sqrt(sigma2_current[p]) + prop[1])^2
+       eta_next[p] <- eta_current[p] + prop[2]
+       if(sigma2_next[p] < 0 || eta_next[p] < etaBounds[1] || eta_next[p] > etaBounds[2])  {
+         accept <- FALSE 
+       } else {
+         
+                                        # terms for reverse proposal
+         Vinv <- C  # start with TPS
+         a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+         Vinv@entries[Cindices$self] <- 4 + a*a
+         Vinv@entries[Cindices$cardNbr] <- -2 * a
+         Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
           #Vinv <- Vinv / sigma2_current[p]
 
-          B <- Vinv
-          diag(B) <- diag(B) + n
+         B <- Vinv
+         diag(B) <- diag(B) + n
           
-          U <- update.spam.chol.NgPeyton(U, B)
-          
-          denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
-          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv))
-          denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
-          
+         U <- update.spam.chol.NgPeyton(U, B)
+         Uc <- update.spam.chol.NgPeyton(Uc, Vinv)
+        
+         denominator <-  - sum(log(diag(U))) + sum(log(diag(Uc))) + eta_current[p]
+         UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+         denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+         
           # terms for forward proposal
-          Vinv <- C  # start with TPS
-          a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
-          Vinv@entries[Cindices$self] <- 4 + a*a
-          Vinv@entries[Cindices$cardNbr] <- -2 * a
-      Vinv <- Vinv / (sigma2_next[p]*4*pi/exp(2*eta_current[p]))
+         Vinv <- C  # start with TPS
+         a <- 4 + 1/exp(2*eta_next[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+         Vinv@entries[Cindices$self] <- 4 + a*a
+         Vinv@entries[Cindices$cardNbr] <- -2 * a
+         Vinv <- Vinv / (sigma2_next[p]*4*pi/exp(2*eta_next[p]))
 #          Vinv <- Vinv / sigma2_next[p]
           # simplify as Vinv from above *sigma2_current[p]/sigma2_next[p]
           
-          B <- Vinv
-          diag(B) <- diag(B) + n
-          
-          U <- update.spam.chol.NgPeyton(U, B)
-          
-          numerator <- -(I)*log(sigma2_next[p])/2 - sum(log(diag(U)))
-          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
-          numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
-          
-          accept <- decide(numerator - denominator)
-        }
-        if(accept) {
-          numAcceptSigma2[p] <- numAcceptSigma2[p] + 1
-          # sample alphas
-          means <- backsolve(U, UtWi)
-          alpha_next[,p] <- means + backsolve(U, rnorm(I))
-        } else {
-          sigma2_next[p] <- sigma2_current[p]
-          alpha_next[,p] <- alpha_current[,p]
-        }
-      }
-
-    }
-    sigma2_current <- sigma2_next
-    alpha_current  <- alpha_next
+         B <- Vinv
+         diag(B) <- diag(B) + n
+         
+         U <- update.spam.chol.NgPeyton(U, B)
+         Uc <- update.spam.chol.NgPeyton(Uc, Vinv)
+        
+         numerator <-  - sum(log(diag(U))) + sum(log(diag(Uc))) + eta_next[p]
+         UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+         numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+                 
+         accept <- decide(numerator - denominator)
+       }
+       if(accept) {
+         numAcceptSigmaEta[p] <- numAcceptSigmaEta[p] + 1
+                                        # sample alphas
+         means <- backsolve(U, UtWi)
+         alpha_next[,p] <- means + backsolve(U, rnorm(I))
+       } else {
+         sigma2_next[p] <- sigma2_current[p]
+         eta_next[p] <- eta_current[p]
+         alpha_next[,p] <- alpha_current[,p]
+       }
+       adaptVals[[p]][count, ] <- c(sqrt(sigma2_next[p]), eta_next[p])
+     }
+     eta_current <- eta_next
+     sigma2_current <- sigma2_next
+     alpha_current  <- alpha_next
     
-                                        # for the moment, also include the non-joint sample as well so that alphas can move on their own; this adds about a second per iteration
+ 
+   } else {
+    # update alphas and sigma2s    
+     for(p in 1:P){
+
+       prop <- 
+       sigma2_next[p] <- (rnorm(1, sqrt(sigma2_current[p]), sigma_propSD[p]))^2
+       if(sigma2_next[p] < 0) {
+         accept <- FALSE 
+       } else {
+         
+                                        # terms for reverse proposal
+         Vinv <- C  # start with TPS
+         a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+         Vinv@entries[Cindices$self] <- 4 + a*a
+         Vinv@entries[Cindices$cardNbr] <- -2 * a
+         Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
+          #Vinv <- Vinv / sigma2_current[p]
+
+         B <- Vinv
+         diag(B) <- diag(B) + n
+          
+         U <- update.spam.chol.NgPeyton(U, B)
+         
+         denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
+         UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv))
+         denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+         
+          # terms for forward proposal
+         Vinv <- C  # start with TPS
+         a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
+         Vinv@entries[Cindices$self] <- 4 + a*a
+         Vinv@entries[Cindices$cardNbr] <- -2 * a
+         Vinv <- Vinv / (sigma2_next[p]*4*pi/exp(2*eta_current[p]))
+#          Vinv <- Vinv / sigma2_next[p]
+          # simplify as Vinv from above *sigma2_current[p]/sigma2_next[p]
+          
+         B <- Vinv
+         diag(B) <- diag(B) + n
+         
+         U <- update.spam.chol.NgPeyton(U, B)
+         
+         numerator <- -(I)*log(sigma2_next[p])/2 - sum(log(diag(U)))
+         UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
+         numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+         
+         accept <- decide(numerator - denominator)
+       }
+       if(accept) {
+         numAcceptSigma2[p] <- numAcceptSigma2[p] + 1
+                                        # sample alphas
+         means <- backsolve(U, UtWi)
+         alpha_next[,p] <- means + backsolve(U, rnorm(I))
+       } else {
+         sigma2_next[p] <- sigma2_current[p]
+         alpha_next[,p] <- alpha_current[,p]
+       }
+     }
+     
+     sigma2_current <- sigma2_next
+     alpha_current  <- alpha_next
+    
+                                        # for the moment don't include the non-joint sample as well so that alphas can move on their own; this adds about a second per iteration
     if(FALSE) {
     for(p in 1:P){
       
@@ -239,64 +380,6 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     alpha_current  <- alpha_next
   }
 
-    
-  # mu sample
-    for(p in 1:P){
-      
-      mu_next[p] <- rnorm(1, mu_current[p], mu_propSD[p])
-      if(mu_next[p] < muBounds[1] || mu_next[p] > muBounds[2]) {
-        accept <- FALSE
-      } else {
-        
-                                                                        # terms for reverse proposal
-        Vinv <- C  # start with TPS
-        a <- 4 + 1/exp(2*eta_current[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
-        Vinv@entries[Cindices$self] <- 4 + a*a
-        Vinv@entries[Cindices$cardNbr] <- -2 * a
-        Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
-        
-        B <- Vinv
-        diag(B) <- diag(B) + n
-        
-        U <- update.spam.chol.NgPeyton(U, B)
-
-        
-        denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U))) 
-        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
-        denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
-        
-                                        # terms for forward proposal
-        #Vinv <- C  # start with TPS
-        #a <- 4 + 1/exp(2*eta_next[p])  # a = 4 + kappa^2 = 4 + (1/rho)^2 = 4 + (1/exp(eta)^2)
-        #Vinv@entries[Cindices$self] <- 4 + a*a
-        #Vinv@entries[Cindices$cardNbr] <- -2 * a
-        #Vinv <- Vinv / (sigma2_current[p]*4*pi/exp(2*eta_next[p]))
-                                        # simplify as Vinv from above *eta_current[p]/eta_next[p]
-        
-        #B <- Vinv
-        #diag(B) <- diag(B) + n
-        
-        #U <- update.spam.chol.NgPeyton(U, B)
-        
-        numerator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U))) 
-        UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_next[p] * rowSums(Vinv))
-        numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_next[p]^2
-        
-        accept <- decide(numerator - denominator)
-      }
-      if(accept) {
-        numAcceptMu[p] <- numAcceptMu[p] + 1
-                                        # sample alphas
-        means <- backsolve(U, UtWi)
-        alpha_next[,p] <- means + backsolve(U, rnorm(I))
-      } else {
-        mu_next[p] <- mu_current[p]
-        alpha_next[,p] <- alpha_current[,p]
-      }
-    }
-    
-    mu_current <- mu_next
-    alpha_current  <- alpha_next
     
 
     # eta sample
@@ -359,8 +442,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
     eta_current <- eta_next
     alpha_current  <- alpha_next
-#    print(c(s, exp(eta_current)))
-
+   }
+  
     # sample cell indices
     if(areallyAggregated) {
       probs <- calcProbs(t(W), t(alpha_next), prior, possIds, maxCellsByTown, town)
@@ -391,17 +474,51 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       cat("Finished MCMC iteration ", s, " at ", date(), ".\n", sep = "")
 
     if(s%%adaptInterval == 0) {
-      cat("Acceptance rate for sigma/alpha joint proposals: ", round(numAcceptSigma2/adaptInterval, 2), ".\n", sep = " ")
-      numAcceptSigma2 <- rep(0, nTaxa)
+      count <- 0
+      mu_propSD <- mu_propSD * adaptJump (n = rep(1, P), pjump = numAcceptMu / adaptInterval,
+                                          type = 'ben', i = s, K = adaptInterval)
       cat("Acceptance rate for mu/alpha joint proposals: ", round(numAcceptMu/adaptInterval, 2), ".\n", sep = " ")
-      numAcceptMu <- rep(0, nTaxa)
-      cat("Acceptance rate for eta/alpha joint proposals: ", round(numAcceptEta/adaptInterval, 2), ".\n", sep = " ")
-      numAcceptEta <- rep(0, nTaxa)
+      numAcceptMu <- rep(0, P)
+      
+      if(jointSample) {
+         adaptScale <- adaptScale * adaptJump(n = rep(2, P),
+                       pjump = numAcceptSigmaEta / adaptInterval,
+                       type = 'ben',
+                       i =s,
+                       K = adaptInterval)
+
+        cat("Acceptance rate for sigma/eta/alpha joint proposals: ", round(numAcceptSigmaEta/adaptInterval, 2), ".\n", sep = " ")
+        numAcceptSigmaEta <- rep(0, P)
+      } else {
+        sigma_propSD <- sigma_propSD * adaptJump (n = rep(1, P), pjump = numAcceptSigma / adaptInterval,
+                                          type = 'ben', i = s, K = adaptInterval)
+        eta_propSD <- eta_propSD * adaptJump (n = rep(1, P), pjump = numAcceptEta / adaptInterval,                                          type = 'ben', i = s, K = adaptInterval)
+        cat("Acceptance rate for sigma/alpha joint proposals: ", round(numAcceptSigma2/adaptInterval, 2), ".\n", sep = " ")
+        numAcceptSigma2 <- rep(0, P)
+        cat("Acceptance rate for eta/alpha joint proposals: ", round(numAcceptEta/adaptInterval, 2), ".\n", sep = " ")
+        numAcceptEta <- rep(0, P)
+      }
       print(c(s, exp(eta_current)))
+
+      if(s > adaptStartDecay){
+        gamma2     <- 1 / (max(s - adaptStartDecay, 1)/adaptInterval + 3)^(.8) # only let degree of adaptation decay after burnin = 2*gStart
+      } else{
+        gamma2     <- 1/ (      1        + 3)^(.8) #adapt every time as if it's the first time
+      }
+
+      if(jointSample) {
+      # update prop covariance (loop thru taxa)
+        for(p in seq_len(P)) {
+          newCov <- cov(adaptVals[[p]])
+          adaptVals[[p]] <- matrix(0, adaptInterval, 2)
+          adaptedCov[[p]] <- (1e-10)*diag(2) + adaptedCov[[p]] + gamma2*(newCov - adaptedCov[[p]])
+          adaptedL[[p]] <- t(chol(adaptedCov[[p]]))
+        }
+      }
     }
-    
+
     if(s %% 250 == 0) {
-      save(alpha_next, sigma2_next, eta_next, mu_next, s, cell, .Random.seed, W, muStore, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
+      save(adaptedCov, adaptedL, adaptScale, alpha_next, sigma2_next, eta_next, mu_next, s, cell, .Random.seed, W, muStore, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
     }
   } # end for s loop
 

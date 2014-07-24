@@ -7,6 +7,26 @@ decide <- function(logMetropolisRatio) {
   if(runif(1,0,1) < exp(logMetropolisRatio)) TRUE else FALSE
 }
 
+# Ben's adaptive MCMC
+adaptJump <- function(n,pjump,pgoal=NULL,max.mult=5,type='simple',i=NULL,K=NULL){
+   pjump[pjump==1]=0.999
+    if(is.null(pgoal)){
+         const=rep(log(.44),length(n))  # optimal acc rate of .44 for d=1
+            const[n==2]=log(.35)
+            const[n==3]=log(.32)
+            const[n>3]=log(.25)} else
+                 const=log(pgoal)
+    if(type=='simple'){
+         if(length(n)==1)
+                return(min(max.mult,max(1/max.mult,const/log(pjump)))) else
+              return(pmin(max.mult,pmax(1/max.mult,const/log(pjump))))} else
+                 if(type=='ben'){
+                      c0=10; c1=.8
+                         pgoal=exp(const)
+                         gamma=c0/((i/K+3)^c1)
+                         return(exp(gamma*(pjump-pgoal)))}
+ }
+
 
 ##################################################################################
 # random sampling of cells to which trees belong, given set of probabilities
