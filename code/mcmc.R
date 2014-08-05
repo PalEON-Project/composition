@@ -59,7 +59,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     }
     numAcceptSigmaEta <- rep(0, P)
   } else {
-    sigma_propSD <- rep(0.02, P)
+    logSigma2_propSD <- rep(0.02, P)
                                         # Lindgren; eta = log(rho); rho = 1/kappa; kappa^2 = a-4
     eta_propSD <- rep(0.02, P)  # eta likely between 0 and 5 # .02
                                         # modify this to do adaptive
@@ -208,14 +208,14 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       for(p in seq_len(P)) {
                                         # update alphas and etas/sigma2s    
         prop <- adaptScale[p] * adaptedL[[p]] %*% rnorm(2)
-        sigma2_next[p] <- (sqrt(sigma2_current[p]) + prop[1])^2
+        sigma2_next[p] <- exp(log(sigma2_current[p]) + prop[1])
         eta_next[p] <- eta_current[p] + prop[2]
         if(sigma2_next[p] < 0 || eta_next[p] < etaBounds[1] || eta_next[p] > etaBounds[2])  {
           accept <- FALSE 
         } else { 
           denominator <-  - sum(log(diag(U[[p]]))) + sum(log(diag(Uc[[p]]))) + eta_current[p]
           UtWi <- forwardsolve(U[[p]], Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv[[p]]))
-          denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv[[p]])*mu_current[p]^2
+          denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv[[p]])*mu_current[p]^2 + 0.5*log(sigma2_current[p])
                    
           # terms for forward proposal
           VinvProp <- C  # start with TPS
@@ -234,7 +234,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           
           numerator <-  - sum(log(diag(Uprop))) + sum(log(diag(UcProp))) + eta_next[p]
           UtWi <- forwardsolve(Uprop, Wi.pbar[ , p] * n + mu_current[p] * rowSums(VinvProp))
-          numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(VinvProp)*mu_current[p]^2
+          numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(VinvProp)*mu_current[p]^2 + 0.5*log(sigma2_next[p])
           
           accept <- decide(numerator - denominator)
         }
@@ -251,7 +251,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           eta_next[p] <- eta_current[p]
           alpha_next[,p] <- alpha_current[,p]
         }
-        adaptVals[[p]][count, ] <- c(sqrt(sigma2_next[p]), eta_next[p])
+        adaptVals[[p]][count, ] <- c(log(sigma2_next[p]), eta_next[p])
       }
       eta_current <- eta_next
       sigma2_current <- sigma2_next
@@ -262,7 +262,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     # update alphas and sigma2s    
      for(p in 1:P){
 
-       sigma2_next[p] <- (rnorm(1, sqrt(sigma2_current[p]), sigma_propSD[p]))^2
+       sigma2_next[p] <- exp(rnorm(1, log(sigma2_current[p]), logSigma2_propSD[p]))^2
        if(sigma2_next[p] < 0) {
          accept <- FALSE 
        } else {
@@ -282,7 +282,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
          
          denominator <- -(I)*log(sigma2_current[p])/2 - sum(log(diag(U)))
          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv))
-         denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+         denominator <- denominator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2 + 0.5*log(sigma2_current[p])
          
           # terms for forward proposal
          Vinv <- C  # start with TPS
@@ -300,7 +300,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
          
          numerator <- -(I)*log(sigma2_next[p])/2 - sum(log(diag(U)))
          UtWi <- forwardsolve(U, Wi.pbar[ , p] * n + mu_current[p] * rowSums(Vinv))
-         numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2
+         numerator <- numerator + 0.5*sum(UtWi^2) - 0.5*sum(Vinv)*mu_current[p]^2 + 0.5*log(sigma2_current[p])
          
          accept <- decide(numerator - denominator)
        }
@@ -460,7 +460,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         cat("Acceptance rate for sigma/eta/alpha joint proposals: ", round(numAcceptSigmaEta/adaptInterval, 2), ".\n", sep = " ")
         numAcceptSigmaEta <- rep(0, P)
       } else {
-        sigma_propSD <- sigma_propSD * adaptJump (n = rep(1, P), pjump = numAcceptSigma / adaptInterval,
+        logSigma2_propSD <- logSigma2_propSD * adaptJump (n = rep(1, P), pjump = numAcceptSigma / adaptInterval,
                                           type = 'ben', i = s, K = adaptInterval)
         eta_propSD <- eta_propSD * adaptJump (n = rep(1, P), pjump = numAcceptEta / adaptInterval,                                          type = 'ben', i = s, K = adaptInterval)
         cat("Acceptance rate for sigma/alpha joint proposals: ", round(numAcceptSigma2/adaptInterval, 2), ".\n", sep = " ")
