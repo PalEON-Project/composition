@@ -31,11 +31,8 @@ wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_p
 
 cd $dataDir
 # note this doesn't work because of authentication issues, so navigate to here via browser instead
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Bwesterncompv${westernVersion}.csv" -O westerncomp-${westernVersion}.csv
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Bwesterncompv${westernVersion}.csv" -O western-${westernVersion}.csv
 
-
-
-mv westerncompv${westernVersion}.csv western-${westernVersion}.csv
 rm -f western.csv
 ln -s western-${westernVersion}.csv western.csv
 
