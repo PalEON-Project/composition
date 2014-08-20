@@ -89,12 +89,33 @@ cat("\n")
 ########################################################################
 # subset to portion of PalEON Albers grid and create graph -------------
 ########################################################################
-
 source(file.path(codeDir, 'set_domain.R'))
 
-data <- data[ coord$X <= easternLimitOfWesternDomain, ]
-coord <- coord[ coord$X <= easternLimitOfWesternDomain, ]
+
+if(buffer > 0) {
+  coordFull <- expand.grid(X = xGrid, Y=rev(yGrid))
+  coordFull$fullID <- seq_len(nrow(coordFull))
   
+  coord$origID <- seq_len(nrow(coord))
+  
+  dataFull <- as.data.frame(matrix(0, nrow = nrow(coordFull), ncol = nTaxa))
+  names(dataFull) <- names(data)
+  
+  tmp <- merge(coordFull, coord,
+               all.x = TRUE, all.y = FALSE)
+  
+  tmp <- tmp[order(tmp$fullID), ]
+  origRows <- !is.na(tmp$origID)
+  dataFull[origRows, ] <- data[tmp$origID[origRows], ]
+
+  data <- dataFull[ coordFull$X <= easternLimitOfWesternDomain, ]
+  coord <- coordFull[ coordFull$X <= easternLimitOfWesternDomain, ]
+  coord$ID <- coord$fullID
+} else {
+  data <- data[ coord$X <= easternLimitOfWesternDomain, ]
+  coord <- coord[ coord$X <= easternLimitOfWesternDomain, ]
+}
+
 data <- data[order(coord$ID), ]
 coord <- coord[order(coord$ID), ]
 dimnames(coord)[[1]] <- coord$ID
@@ -109,8 +130,9 @@ fns <- rep("", 2)
 fns[1] <- paste('graph', type, '-',  m1, 'x', m2, '.csv', sep='')
 fns[2] <- paste('graphCats', type, '-', m1, 'x', m2, '.csv', sep='')
 
-if(!file.exists(file.path(dataDir, fns[1])) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, fns[2]))))
+if(!file.exists(file.path(dataDir, fns[1])) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, fns[2])))) {
   fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir)
+} 
 
 nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure, dir = dataDir)
 
@@ -129,7 +151,6 @@ if(nbhdStructure == "lindgren_nu1") {
 ########################################################################
 # create data objects for MCMC fitting ---------------------------------
 ########################################################################
-
 
 data <- as.matrix(data)
 

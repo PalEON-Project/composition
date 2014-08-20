@@ -25,12 +25,10 @@ graphCreate <- function(m1, m2, type = "bin", dir = getwd(), fn = NULL, fn_cats 
     substring(typeUC, 1 ,1) = toupper(substring(typeUC, 1, 1))
     fn_cats <- paste('graphCats', typeUC, '-', m1, 'x', m2, '.csv', sep='')
   }
-  fn_cats = file.path(dir, fn_cats)
-
   
   if(type == 'bin') {
 
-    write(m,fn)
+    write(m,file.path(dir, fn))
 
     nbsx=c(0,-1,1,0)
     nbsy=c(-1,0,0,1)
@@ -41,11 +39,11 @@ graphCreate <- function(m1, m2, type = "bin", dir = getwd(), fn = NULL, fn_cats 
       tmp=cbind(nbsx+x,nbsy+y)
       tmp=tmp[tmp[,1]>=0&tmp[,1]<m1&tmp[,2]>=0&tmp[,2]<m2,]
       nbs=sort((tmp[,1])+(m2-1 - tmp[,2])*m1)
-      write(c(grid[i],length(nbs),nbs),fn,ncol=length(nbs)+2,sep=' ',append=TRUE)
+      write(c(grid[i],length(nbs),nbs),file.path(dir, fn),ncol=length(nbs)+2,sep=' ',append=TRUE)
       fn_cats <- NULL
     }
   } else { # tps
-    write(m,fn)
+    write(m,file.path(dir, fn))
 
     nbsx=c(0,-1:1,-2,-1,1,2,-1:1,0)
     nbsy=c(-2,rep(-1,3),rep(0,4),rep(1,3),2)
@@ -56,7 +54,7 @@ graphCreate <- function(m1, m2, type = "bin", dir = getwd(), fn = NULL, fn_cats 
       tmp=cbind(nbsx+x,nbsy+y)
       tmp=tmp[tmp[,1]>=0&tmp[,1]<m1&tmp[,2]>=0&tmp[,2]<m2,]
       nbs=(tmp[,1])+(m2-1 - tmp[,2])*m1
-      write(c(grid[i],length(nbs),nbs),fn,ncol=length(nbs)+2,sep=' ',append=TRUE)
+      write(c(grid[i],length(nbs),nbs),file.path(dir, fn),ncol=length(nbs)+2,sep=' ',append=TRUE)
     }
 
     category <- matrix(6,nr=m2,nc=m1)
@@ -71,7 +69,7 @@ graphCreate <- function(m1, m2, type = "bin", dir = getwd(), fn = NULL, fn_cats 
     category[1,1] <- category[1,m1] <- category[m2,1] <- category[m2,m1] <- 1
     category[2,2] <- category[2,m1-1] <- category[m2-1,2] <- category[m2-1,m1-1] <- 4
     category[1,2] <- category[2,1] <- category[m2-1,1] <- category[m2,2] <- category[1,m1-1] <- category[2,m1] <- category[m2-1,m1] <- category[m2,m1-1] <- 3
-    write(c(t(category)), fn_cats , ncol = 1)
+    write(c(t(category)), file.path(dir, fn_cats) , ncol = 1)
   }
   return(c(fn, fn_cats))
 }
