@@ -14,10 +14,16 @@ if(!exists('uniqueRunID'))
 
 # fit model --------------------------------------------------
 
-load(file.path(dataDir, 'westernData.Rda'))
+#if(cv) cvAdd <- "-cv" else cvAdd <- ""
+# decided to just have different run #s for cv runs
+cvAdd <- ""
+
+load(file.path(dataDir, paste0('westernData', cvAdd, '.Rda')))
 
 if(uniqueRunID == "")
   fnAdd <- "" else fnAdd <- paste0("-run", uniqueRunID)
+
+fnAdd <- paste0(fnAdd, cvAdd)
 
 latentNcdfName <- paste0('PLScomposition_raw_western_', productVersion, fnAdd, '.nc')
 

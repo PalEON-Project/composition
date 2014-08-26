@@ -27,3 +27,15 @@ west should have all 21 eastern taxa but no white cedar or chestnut since zero t
 added lindgren_nu1 branch that has Lindgren model with nu=1 and (for now) no boundary correction; this has RW on log(rho)=eta, with joint sampling of rho,alpha
 
 arggh - running time is a lot longer because the precision matrices are not as sparse
+
+August/14:
+lindgren_nu1_logsigma2 branch has sigma2 proposal on log scale
+
+added possibility of boundary and of CV; initial bdry didn't fix boundary effects; runnign CV as well as test case
+these are 0.3-5 and 0.3-6
+
+not sure difference of 0.3-2,0.3-3, 0.3-4: between 2 and 3 or 3 and 4 probably switched to log sigma proposal
+
+0.3-3: possibly not log(sigma) scale?
+0.3-4: joint eta-sigma and log(sigma) scale
+

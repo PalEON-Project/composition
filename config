@@ -25,7 +25,7 @@ outputDir="/var/tmp/paciorek/paleon/comp/output"
 tmpDir="/var/tmp/paciorek/paleon/comp/tmp"
 dataDir="/var/tmp/paciorek/paleon/comp/data"
 
-S=20000
+S=10000
 burnin=2000
 thin=10
 secondThin=1
@@ -36,6 +36,10 @@ jointSample=TRUE
 
 buffer=10
 
-uniqueRunID="5"
+uniqueRunID="6"
 
 seed=0
+
+cv=TRUE
+cellHoldOutPct=0.95
+treeHoldOutPct=0.05

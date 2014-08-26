@@ -18,7 +18,6 @@ graphCreate <- function(m1, m2, type = "bin", dir = getwd(), fn = NULL, fn_cats 
     substring(typeUC, 1 ,1) = toupper(substring(typeUC, 1, 1))
     fn = paste('graph', typeUC, '-',  m1, 'x', m2, '.csv', sep='')
   }
-  fn = file.path(dir, fn)
 
   if(is.null(fn_cats)) {
     typeUC = type
