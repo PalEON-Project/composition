@@ -36,10 +36,10 @@ jointSample=TRUE
 
 buffer=10
 
-uniqueRunID="6"
+uniqueRunID="8"
 
 seed=0
 
-cv=TRUE
+cv=FALSE
 cellHoldOutPct=0.95
 treeHoldOutPct=0.05
