@@ -33,6 +33,7 @@ if(!resumeRun) {
 out = runMCMC(y = data$taxon, cell = NULL, C = nbhd, town = data$town,
   townCellOverlap = townCellOverlap, townCellIds = townCellIds,
   S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0),
+  nbhdStructure = nbhdStructure,
   areallyAggregated = TRUE, outputNcdfName = latentNcdfName, taxa = taxa,
   numCores = numCoresToUse, runID = paste0("-eastern-run", uniqueRunID), dataDir = dataDir,
   outputDir = outputDir)

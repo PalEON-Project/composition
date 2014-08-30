@@ -32,7 +32,7 @@ secondThin=1
 resumeRun=FALSE
 numCoresToUse=1
 numSamplesForProps=500
-jointSample=TRUE
+
 
 buffer=10
 

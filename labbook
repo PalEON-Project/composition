@@ -45,3 +45,6 @@ not sure difference of 0.3-2,0.3-3, 0.3-4: between 2 and 3 or 3 and 4 probably s
 
 8/29/14:
 weird stuff with spam hidden copy of chol.spam objects in 3.1 and bogus results
+basically the call to update.spam goes to .Fortran and because changes in Uprop are made there, U[[p]] is never copied and just refers to Uprop
+
+I've updated mcmc.R to force the copy and now things seem to give same results on R 3.0 and R 3.1

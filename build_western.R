@@ -160,4 +160,4 @@ cell <- rep(which(total > 0), times = total[total > 0])
 
 data <- data.frame(taxon = taxon, cell = cell)
 
-save(nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = paste0(file.path(dataDir, 'westernData.Rda')))
+save(nbhdStructure, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = paste0(file.path(dataDir, 'westernData.Rda')))

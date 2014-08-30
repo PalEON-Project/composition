@@ -6,6 +6,8 @@
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
 source config
 
+export OMP_NUM_THREADS=1
+
 # get cookie with Wiki authentication info
 wget --post-data="u=${WIKI_USERNAME}&p=${WIKI_PASSWORD}&sectok=b7649cb05e87dc0f45d9d91851a7b097&id=start&r=1&do=login" --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies https://paleon.geography.wisc.edu/doku.php/dw__login
 
