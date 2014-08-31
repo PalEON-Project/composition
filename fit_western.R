@@ -8,6 +8,9 @@ source(file.path(codeDir, "mcmc.R"))
 source(file.path(codeDir, "netCDF.R"))
 source(file.path(codeDir, "set_domain.R"))
 
+library(RhpcBLASctl)
+
+omp_set_num_threads(1)
 
 if(!exists('uniqueRunID'))
   uniqueRunID <- ""
@@ -48,6 +51,7 @@ outputNcdfPtr <- nc_open(file.path(outputDir, outputNcdfName), write = TRUE)
 
 # this draws the proportions based on the draws of the latent variables
 set.seed(0)
+omp_set_num_threads(4)
 drawProportions(latentNcdfPtr, outputNcdfPtr, numMCsamples = numSamplesForProps, numInputSamples = floor(S/thin), secondThin = secondThin, I = m1*m2, taxa = taxa$taxonName)
 
 nc_close(latentNcdfPtr)

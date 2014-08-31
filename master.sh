@@ -113,6 +113,15 @@ echo "burnin=$burnin" > tmp.config
 echo "domain=\"western\"" >> tmp.config
 ./remove_burnin.R 
 
+########################################################################
+# do cross-validation -----------------------
+########################################################################
+
+if [ $cv = "TRUE" ]
+then
+    ./calc_cv_western.R >& log.calc_cv_western_${productVersion}${uniqueRunID} &
+fi
+
 
 ########################################################################
 # make plots -----------------------

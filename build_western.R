@@ -4,6 +4,7 @@
 # assumes data in western.csv
 source("config")
 
+set.seed(0)
 
 source(file.path(codeDir, "graph.R"))
 
@@ -147,6 +148,22 @@ if(nbhdStructure == "lindgren_nu1") {
   nbhdIndices$otherNbr <- which(nbhd@entries %in% c(1,2))
 } else nbhdIndices <- NULL
 
+########################################################################
+# split into train and test --------------------------------------------
+########################################################################
+
+if(cv) {
+  dataFull <- data
+  locsToSplit <- which(coord$X < 300000)
+  numLocs <- length(locsToSplit)
+  numOut <- round(cellHoldOutPct * numLocs)
+  smp <- sample(c(rep(TRUE, numOut), rep(FALSE, numLocs - numOut)), size = numOut)
+  holdOutCells <- locsToSplit[smp]
+  data[holdOutCells, ] <- 0
+} else {
+  holdOutCells <- dataFull <- NULL
+}
+
 
 ########################################################################
 # create data objects for MCMC fitting ---------------------------------
@@ -160,4 +177,18 @@ cell <- rep(which(total > 0), times = total[total > 0])
 
 data <- data.frame(taxon = taxon, cell = cell)
 
-save(nbhdStructure, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = paste0(file.path(dataDir, 'westernData.Rda')))
+if(cv) {
+  nTrees <- nrow(data)
+  numTreeOut <- round(treeHoldOutPct*nTrees)
+  smp <- sample(c(rep(TRUE, numTreeOut), rep(FALSE, nTrees - numTreeOut)), size = nTrees)
+  treeHoldOut <- data[smp, ]
+  data <- data[!smp, ]
+  
+  dataFull <- as.matrix(dataFull)
+  taxon <- rep(rep(1:nTaxa, nCells), times = c(t(dataFull)))
+  total <- rowSums(dataFull)
+  cell <- rep(which(total > 0), times = total[total > 0])
+  dataFull <- data.frame(taxon = taxon, cell = cell)
+} else treeHoldOut <- NULL
+
+save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, 'westernData.Rda'))

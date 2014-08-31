@@ -317,7 +317,7 @@ cppFunction('
 
 cppFunction('
   NumericMatrix compute_cell_probabilities_cpp(NumericMatrix alpha, int numrv, int I, int P){
-  
+
     GetRNGstate();
     NumericVector rvVals(P);
     NumericMatrix probs(I, P);
@@ -326,6 +326,7 @@ cppFunction('
     int i, k, l;
     int maxind;
 
+    #pragma omp parallel for private(l, k, rvVals, max, maxind) shared(probs)
     for(i = 0; i < I; ++i){
       for(l = 0; l < P; ++l){
          probs(i,l) = 0.0;
@@ -352,5 +353,5 @@ cppFunction('
     PutRNGstate();
     return probs;
   }
-')
+', plugins = c("openmp"))
 
