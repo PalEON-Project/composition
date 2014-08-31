@@ -326,8 +326,53 @@ cppFunction('
     int i, k, l;
     int maxind;
 
-    #pragma omp parallel for private(l, k, rvVals, max, maxind) shared(probs)
+
     for(i = 0; i < I; ++i){
+      for(l = 0; l < P; ++l){
+         probs(i,l) = 0.0;
+      }
+      for(k = 0; k < numrv; ++k){
+        for(l = 0; l < P; ++l){
+          rvVals(l) = Rf_rnorm(alpha(i,l),1);
+        }
+        maxind = P-1;
+        max = rvVals(P-1);
+        for(l = 0; l < (P-1); ++l){
+          if(rvVals(l) > max){
+            maxind = l;
+            max = rvVals(l);
+          } 
+        }
+        probs(i,maxind) += 1.0;
+      }
+      for(l = 0; l < P; ++l) {
+        probs(i,l) /= numrv;
+      }
+    }
+
+    PutRNGstate();
+    return probs;
+  }
+')
+# , plugins = c("openmp"))
+
+           #pragma omp parallel for private(l, k, rvVals, max, maxind) shared(probs)
+
+
+cppFunction('
+  NumericMatrix compute_cell_probabilities_cpp_mp(NumericMatrix alpha, int numrv, int I, int P){
+
+    GetRNGstate();
+    NumericMatrix probs(I, P);
+    int i;
+
+    #pragma omp parallel for  
+    for(i = 0; i < I; ++i){
+      NumericVector rvVals(P);
+      double max;    
+      int k, l;
+      int maxind;
+
       for(l = 0; l < P; ++l){
          probs(i,l) = 0.0;
       }
@@ -355,3 +400,4 @@ cppFunction('
   }
 ', plugins = c("openmp"))
 
+           

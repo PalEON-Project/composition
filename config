@@ -13,7 +13,7 @@ ohioVersion="02"
 
 productVersion="0.3"
 
-nbhdStructure="lindgren_nu1"  # bin, lindgren_nu1, lindgren_nu2
+nbhdStructure="bin"  # bin, lindgren_nu1, lindgren_nu2
 
 # projectDir should be the main directory containing this config file
 projectDir="~/research/jmac/composition"
@@ -25,9 +25,9 @@ outputDir="/var/tmp/paciorek/paleon/comp/output"
 tmpDir="/var/tmp/paciorek/paleon/comp/tmp"
 dataDir="/var/tmp/paciorek/paleon/comp/data"
 
-S=500
-burnin=200
-thin=10
+S=10000
+burnin=2000
+thin=80
 secondThin=1
 resumeRun=FALSE
 numCoresToUse=1
@@ -36,7 +36,7 @@ numSamplesForProps=10000
 
 buffer=10
 
-uniqueRunID="6"
+uniqueRunID="7"
 
 seed=0
 

@@ -437,7 +437,9 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 }
 
 drawProportions <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, numInputSamples, secondThin = 1, I, taxa){
-
+  require(RhpcBLASctl)
+  omp_set_num_threads(4)
+  
   samples <- seq(1, numInputSamples, by = secondThin)
   P <- length(taxa)
 
@@ -448,7 +450,7 @@ drawProportions <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, n
     for(p in 1:P) 
       tmp[ , p] <- ncvar_get(latentNcdfPtr, varid = taxa[p], start = c(1, 1, samples[s]), count = c(-1, -1, 1))
     
-    phat <- compute_cell_probabilities_cpp(tmp, numMCsamples, I, P)
+    phat <- compute_cell_probabilities_cpp_mp(tmp, numMCsamples, I, P)
 
     for(p in 1:P) 
       ncvar_put(outputNcdfPtr, taxa[p], phat[ , p], start = c(1, 1, s), count = c(-1, -1, 1))
