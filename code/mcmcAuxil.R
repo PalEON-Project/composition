@@ -354,9 +354,6 @@ cppFunction('
     return probs;
   }
 ')
-# , plugins = c("openmp"))
-
-           #pragma omp parallel for private(l, k, rvVals, max, maxind) shared(probs)
 
 
 cppFunction('

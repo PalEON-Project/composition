@@ -27,7 +27,7 @@ dataDir="/var/tmp/paciorek/paleon/comp/data"
 
 S=10000
 burnin=2000
-thin=80
+thin=100  # thinning applies to all S not just S-burnin
 secondThin=1
 resumeRun=FALSE
 numCoresToUse=1

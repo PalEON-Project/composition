@@ -437,6 +437,39 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 }
 
 drawProportions <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, numInputSamples, secondThin = 1, I, taxa){
+  require(doParallel)
+  require(foreach)
+  registerDoParallel(4)
+
+  samples <- seq(1, numInputSamples, by = secondThin)
+  P <- length(taxa)
+
+  alphas <- phat <- array(0, c(I, P, length(samples)))
+  if(secondThin == 1) {
+    for(p in 1:P) 
+      alphas[ , p, ] <- ncvar_get(latentNcdfPtr, varid = taxa[p], start = c(1, 1, 1), count = c(-1, -1, -1))
+  } else {
+    for(s in seq_along(samples)) {
+      for(p in 1:P) 
+        alphas[ , p, s] <- ncvar_get(latentNcdfPtr, varid = taxa[p], start = c(1, 1, samples[s]), count = c(-1, -1, 1))
+    }
+  }
+  
+  phat <- foreach(s = seq_along(samples)) %dopar% {
+    set.seed(s)
+    cat("Started sampling probabilities for (thinned) MCMC sample number ", samples[s], " at ", date(), ".\n", sep = "")
+    compute_cell_probabilities_cpp(alphas[ , , s], numMCsamples, I, P)  
+  }
+
+  phat <- array(c(unlist(phat)), c(I, P, length(samples)))
+  
+  for(p in 1:P) 
+    ncvar_put(outputNcdfPtr, taxa[p], phat[ , p, ], start = c(1, 1, 1), count = c(-1, -1, -1))
+  
+  invisible(NULL)
+}
+
+drawProportions_mp <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, numInputSamples, secondThin = 1, I, taxa){
   require(RhpcBLASctl)
   omp_set_num_threads(4)
   
@@ -446,11 +479,12 @@ drawProportions <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, n
   tmp <- matrix(0, I, P)
   
   for(s in seq_along(samples)) {
-
+    print(c(s, date()))
+    if(s==3) omp_set_num_threads(1)
     for(p in 1:P) 
       tmp[ , p] <- ncvar_get(latentNcdfPtr, varid = taxa[p], start = c(1, 1, samples[s]), count = c(-1, -1, 1))
     
-    phat <- compute_cell_probabilities_cpp_mp(tmp, numMCsamples, I, P)
+    phat <- compute_cell_probabilities_cpp(tmp, numMCsamples, I, P)
 
     for(p in 1:P) 
       ncvar_put(outputNcdfPtr, taxa[p], phat[ , p], start = c(1, 1, s), count = c(-1, -1, 1))
