@@ -36,8 +36,12 @@ water = t(as.matrix(raster(file.path(dataDir, 'water.tif'))))[westernDomainX, we
 
 mask = is.na(region)
 
+if(!exists('uniqueRunID'))
+  uniqueRunID <- ""
+if(uniqueRunID == "")
+  fnAdd <- "" else fnAdd <- paste0("-", uniqueRunID)
 
-load(file.path(dataDir, 'westernData.Rda'))
+load(file.path(dataDir, paste0('westernData_', productVersion, fnAdd, '.Rda')))
 
 raw <- matrix(0, nrow = nCells, ncol = nTaxa)
 for(p in 1:nTaxa) {
@@ -50,7 +54,7 @@ total[total == 0] <- 1
 raw <- raw / total
 dimnames(raw)[[2]] <- gsub("/", "ZZZ", taxa$taxonName)  # otherwise both / and " " become "." so can't distinguish when I substitute back in for "."
 
-finalNcdfName <- paste0('PLScomposition_western_', productVersion, '-release.nc')
+finalNcdfName <- paste0('PLScomposition_western_', productVersion, fnAdd, '_release.nc')
 
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))

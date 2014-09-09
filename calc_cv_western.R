@@ -35,6 +35,10 @@ dataCellTest <- as.matrix(dataFull[dataFull$cell %in% holdOutCells, ])[ , c(2,1)
 dataTreeTest <- as.matrix(treeHoldOut)[ , c(2, 1)]
 # need columns reversed for picking out relevant probs from preds array
 
+logDensCellPoint <- sum(log(pm[dataCellTest]))
+logDensTreePoint <- sum(log(pm[dataTreeTest]))
+
+
 #tmpP <- preds[ , , 30]
 preds[preds == 0] <- 0.0001  # to deal with loss of digits because of sampling of probs given alphas
 
@@ -45,7 +49,7 @@ logDensTree <- rep(0, nSamples)
 
 for(s in seq_len(nSamples)) {
   logDensCell[s] <- sum(log(preds[ , , s][dataCellTest]))
-#  logDensTree[s] <- sum(log(preds[ , , s][dataTreeTest]))
+  logDensTree[s] <- sum(log(preds[ , , s][dataTreeTest]))
 }
 
 nullLogDens <- nrow(dataCellTest)*log(1/nTaxa)
@@ -60,15 +64,16 @@ for(p in seq_len(nTaxa)) {
 treesPerCell <- rowSums(heldOutEmpProbs)
 heldOutEmpProbs <- heldOutEmpProbs / treesPerCell
 
-tmp1 <- heldOutEmpProbs[treesPerCell > 0, ]
-tmp2 <- apply(preds[treesPerCell > 0, , ], c(1, 2), mean)
+treeCountCut <- 19
+tmp1 <- heldOutEmpProbs[treesPerCell > treeCountCut, ]
+tmp2 <- apply(preds[treesPerCell > treeCountCut, , ], c(1, 2), mean)
 
 mspe = mean((tmp1 - tmp2)^2)
 mae = mean(abs(tmp1 - tmp2))
 
 mspeSamples <- maeSamples <- rep(0, nSamples)
 
-tmp2 <- preds[treesPerCell > 0, , ]
+tmp2 <- preds[treesPerCell > treeCountCut, , ]
 
 for(s in seq_len(nSamples)) {
   mspeSamples[s] <- mean((tmp1 - tmp2[ ,, s])^2)
@@ -80,6 +85,15 @@ nullMspe = mean((tmp1 - 1/nTaxa)^2)
 nullMae = mean(abs(tmp1 - 1/nTaxa))
 
 
+# weighted mae/mspe
+
+treeCountCut <- 0
+tmp1 <- heldOutEmpProbs[treesPerCell > treeCountCut, ]
+tmp2 <- apply(preds[treesPerCell > treeCountCut, , ], c(1, 2), mean)
+numTrees <- treesPerCell[treesPerCell > treeCountCut]
+
+mspeWgt = sum(numTrees*(tmp1 - tmp2)^2)/sum(numTrees*nTaxa)
+maeWgt = sum(numTrees*abs(tmp1 - tmp2))/sum(numTrees*nTaxa)
 
 
 

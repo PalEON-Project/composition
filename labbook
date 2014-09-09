@@ -28,6 +28,8 @@ added lindgren_nu1 branch that has Lindgren model with nu=1 and (for now) no bou
 
 arggh - running time is a lot longer because the precision matrices are not as sparse
 
+(actually joint sampling is -- as of Aug 14 -- of rho/sigma/alpha)
+
 August/14:
 lindgren_nu1_logsigma2 branch has sigma2 proposal on log scale
 
@@ -50,3 +52,30 @@ I've updated mcmc.R to force the copy and now things seem to give same results o
 
 authorship:
 Paciorek, Thurman, Goring, Cogbill, Williams, Mladenoff, Peters, Zhu, McLachlan.
+
+9/5/14:
+needed to deal with issue with starting values that if alphas not initiated via Gibbs to be consistent with w's and sigmas then the CAR model had 0 acceptance for sigma2 for some taxa; now that I do this, things are fine
+
+the bdry effect for Lindgren is not really a bdry - you can see a frame around the actual bdry, but the problem for us is in the little bulges between data around the edges
+
+going to use a bdry of 6 not 10 as it doesn't really seem to matter much
+
+would be good to try a TPS run and see what it does there
+
+runs
+0.3-10: bin, 5% cv # running
+0.3-11: lind, 5% cv  # running
+0.3-12: tps, 5% cv
+0.3-13: bin, 20% cv for cells
+0.3-14: lind, 20% cv for cells
+0.3-15: tps, 20% cv for cells
+0.3-16: bin, no bdry, no CV (final run)
+
+-10 and -11 have adaptStartDecay at 5000 but I just changed it to be the same as $burnin
+
+running short version of -12 to see if tps w/o bdry correction shows same bdry effect as lindgren - indeed w/o bdry correction shows weird incursions seen in lindgren
+
+then will run full long version with the bdry correction
+[*** check if see incursions when have bdry correct]
+
+changing westernData.Rda to have version number in it

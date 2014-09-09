@@ -40,7 +40,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   P <- length(taxa$taxonName)
   I <- nrow(C)
 
-  if(nbhdStructure != 'bin') {
+  if(!nbhdStructure %in% c('bin', 'tps')) {
     etaBounds <- c(log(.1), 5)
     muBounds <- c(-10, 10)
     mu_propSD <- rep(0.10, P)
@@ -75,17 +75,16 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     sampleIterates <- 1:S
     storeIndex <- 1
 
-    W <- matrix(0, N, P)
+    W <- matrix(rnorm(N*P), N, P)
     
     sigma2store <- matrix(0, S_keep, P)
-    if(nbhdStructure != 'bin')
+    if(!nbhdStructure %in% c('bin', 'tps'))
       muStore <- etaStore <- sigma2store
     #alpha_current <- alpha_next <- matrix(0, I, P)
     alpha_current <- alpha_next <- matrix(rnorm(I*P), I, P)
 
-#    sigma2_current <- sigma2_next <- rep(1,P)
     sigma2_current <- sigma2_next <- runif(P, 0.1, 3)
-    if(nbhdStructure != 'bin') {
+    if(!nbhdStructure %in% c('bin', 'tps')) {
       mu_current <- mu_next <- runif(P, -2, 2)
       eta_current <- eta_next <- runif(P, 0, 5) # rep(log(3), P)
     }
@@ -94,13 +93,16 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   n <- rep(0, I)
   tbl <- table(cell)
   n[as.numeric(names(tbl))] <- tbl
-  
-  Wi.pbar<-matrix(0, I, P)
+
+  Wi.pbar<-compute_cell_sums_cpp(W,cell,I,P)/c(n+1*(n==0))
+  # Wi.pbar<-matrix(0, I, P)
   
   U <- list()
-
+  dfAdj <- 0
+  if(nbhdStructure == "bin") dfAdj <- 1
+  if(nbhdStructure == "tps") dfAdj <- 2
   
-  if(nbhdStructure != 'bin') {
+  if(!nbhdStructure %in% c('bin', 'tps')) {
     Uc <- UcProp <- list()
     Vinv <- list()
     for(p in seq_len(P)) {
@@ -109,7 +111,6 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       Vinv[[p]]@entries[Cindices$self] <- 4 + a*a
       Vinv[[p]]@entries[Cindices$cardNbr] <- -2 * a
       Vinv[[p]] <- Vinv[[p]] / (sigma2_current[p]*4*pi/exp(2*eta_current[p]))
-      
                                         # do initial Cholesky based on sparseness pattern, with first taxon
       B <- Vinv[[p]]
       diag(B) <- diag(B) + n
@@ -119,17 +120,28 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     }
     UcProp <- chol(B)
   } else {
-    B <- Vinv <- C
-    diag(B) <- diag(B) + n
-    if(!is.spam(B)) warning("B is not spam")
     for(p in seq_len(P)) {
+      B <- Vinv <- C / sigma2_current[p]
+      diag(B) <- diag(B) + n
+      if(!is.spam(B)) warning("B is not spam")
       U[[p]] <- chol(B)  
     }
   }
   
   Uprop <- chol(B)
 
-  
+
+  # sample alphas given Ws and sigmas (and mus/etas if relevant) 
+  for(p in 1:P){
+    if(!nbhdStructure %in% c('bin', 'tps')) {
+      means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv[[p]])))
+    } else {
+      Vinv <- C / sigma2_current[p]
+      means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n))
+    }
+    alpha_next[,p] <- alpha_current[,p] <- means + backsolve(U[[p]], rnorm(I))
+  }
+
   # Gathering some indices outside the loop
   
   treeInd <- treeNonInd <- cellInd <- cellNonInd <- list() 
@@ -179,7 +191,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     Wi.pbar<-compute_cell_sums_cpp(W,cell,I,P)/c(n+1*(n==0))
 
   # joint mu-alpha sample
-    if(nbhdStructure != 'bin') {
+    if(!nbhdStructure %in% c('bin', 'tps')) {
       for(p in 1:P){
         
         mu_next[p] <- rnorm(1, mu_current[p], mu_propSD[p])
@@ -268,21 +280,20 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           alpha_next[,p] <- alpha_current[,p]
         }
         adaptVals[[p]][count, ] <- c(log(sigma2_next[p]), eta_next[p])
-#        print(sum(U[[1]]@entries))
-      }
+     }
       eta_current <- eta_next
       sigma2_current <- sigma2_next
       alpha_current  <- alpha_next
-    } else {  # nbhdStructure == 'bin'
+    } else {  # nbhdStructure == 'bin' or == 'tps'
       for(p in 1:P){
-        
+
         sigma2_next[p] <- exp(rnorm(1, log(sigma2_current[p]), logSigma2_propSD[p]))
         if(sigma2_next[p] < 0) {
           accept <- FALSE 
         } else {
           
                                         # terms for reverse proposal
-          denominator <- -(I-1)*log(sigma2_current[p])/2 - sum(log(diag(U[[p]]))) + 0.5*log(sigma2_current[p])
+          denominator <- -(I-dfAdj)*log(sigma2_current[p])/2 - sum(log(diag(U[[p]]))) + 0.5*log(sigma2_current[p])
           UtWi <- forwardsolve(U[[p]], Wi.pbar[ , p] * n)
           denominator <- denominator + 0.5*sum(UtWi^2)
           
@@ -293,7 +304,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           
           Uprop <- update.spam.chol.NgPeyton(Uprop, B)
           
-          numerator <- -(I-1)*log(sigma2_next[p])/2 - sum(log(diag(Uprop))) + 0.5*log(sigma2_next[p])
+          numerator <- -(I-dfAdj)*log(sigma2_next[p])/2 - sum(log(diag(Uprop))) + 0.5*log(sigma2_next[p])
           UtWi <- forwardsolve(Uprop, Wi.pbar[ , p] * n)
           numerator <- numerator + 0.5*sum(UtWi^2)
           
@@ -331,13 +342,13 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         }
         alpha_next[,p] <- means + backsolve(U[[p]], rnorm(I))
 
-        if(nbhdStructure != 'bin') {
+        if(!nbhdStructure %in% c('bin', 'tps')) {
           ss <- sigma2_current[p] * t(alpha_next[,p] - mu_current[p]) %*% (Vinv[[p]] %*% (alpha_next[,p] - mu_current[p]))
           sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I)/2, scale = 1/(.5*ss + hyperpar[2])) 
                                         # need I-1 because of the zero eigenvalue in the precision matrix (but not for Lindgren)
         } else {
           ss <- sigma2_current[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
-          sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I-1)/2, scale = 1/(.5*ss + hyperpar[2])) 
+          sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I-dfAdj)/2, scale = 1/(.5*ss + hyperpar[2])) 
                                         # need I-1 because of the zero eigenvalue in the precision matrix
         }
           
@@ -367,7 +378,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     if (s%%thin==0){
       outputNcdfPtr <- nc_open(file.path(dataDir, outputNcdfName), write = TRUE)
       sigma2store[storeIndex, ] <- sigma2_next
-      if(nbhdStructure != 'bin') {
+      if(!nbhdStructure %in% c('bin', 'tps')) {
         muStore[storeIndex, ] <- mu_next
         etaStore[storeIndex, ] <- eta_next
       }
@@ -383,7 +394,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
     if(s%%adaptInterval == 0) {
       count <- 0
-      if(nbhdStructure != 'bin') {
+      if(!nbhdStructure %in% c('bin', 'tps')) {
         mu_propSD <- mu_propSD * adaptJump (n = rep(1, P), pjump = numAcceptMu / adaptInterval,
                                             type = 'ben', i = s, K = adaptInterval)
         cat("Acceptance rate for mu/alpha joint proposals: ", round(numAcceptMu/adaptInterval, 2), ".\n", sep = " ")
@@ -402,9 +413,9 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         numAcceptSigma2 <- rep(0, P)
       }
 
-      if(nbhdStructure != 'bin') print(c(s, exp(eta_current))) else print(c(s, sigma2_current))
+      if(!nbhdStructure %in% c('bin', 'tps')) print(c(s, exp(eta_current))) else print(c(s, sigma2_current))
 
-      if(nbhdStructure != 'bin') {
+      if(!nbhdStructure %in% c('bin', 'tps')) {
         if(s > adaptStartDecay){
           gamma2     <- 1 / (max(s - adaptStartDecay, 1)/adaptInterval + 3)^(.8) # only let degree of adaptation decay after burnin = 2*gStart
         } else{
@@ -422,14 +433,14 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     }
 
     if(s %% 250 == 0) {
-      if(nbhdStructure == 'bin') 
-        etaStore <- muStore <- eta_next <- mu_next <- adaptedCov <- adaptedL <- adaptScale <- NULL
-      save(adaptedCov, adaptedL, adaptScale, alpha_next, sigma2_next, eta_next, mu_next, s, cell, .Random.seed, W, muStore, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
+      if(nbhdStructure %in% c('bin', 'tps')) 
+        etaStore <- muStore <- eta_next <- mu_next <- adaptedCov <- adaptedL <- adaptScale <- NULL else logSigma2_propSD <- NULL
+      save(logSigma2_propSD, adaptedCov, adaptedL, adaptScale, alpha_next, sigma2_next, eta_next, mu_next, s, cell, .Random.seed, W, muStore, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
     }
   } # end for s loop
 
   save(sigma2store, file = file.path(outputDir, paste0("sigma2", runID, ".Rda")))
-  if(nbhdStructure != 'bin') {
+  if(!nbhdStructure %in% c('bin', 'tps')) {
     save(muStore, file = file.path(outputDir, paste0("mu", runID, ".Rda")))
     save(etaStore, file = file.path(outputDir, paste0("eta", runID, ".Rda")))
   }

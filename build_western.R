@@ -137,10 +137,12 @@ if(!file.exists(file.path(dataDir, fns[1])) || (nbhdStructure != 'bin' && !file.
 
 nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure, dir = dataDir)
 
-if(nbhdStructure == "lindgren_nu1") {
+if(!nbhdStructure %in% c('bin', 'tps')) {  
   # remove boundary stuff for now while wait to hear from Finn about boundary correction
   nbhd@entries[nbhd@entries %in% c(-4, -6)] <- -8
   nbhd@entries[nbhd@entries %in% c(4, 10, 11, 18, 19)] <- 20
+}
+if(nbhdStructure == "lindgren_nu1" || nbhdStructure == "tps") {
   nbhdIndices <- list()
   # determine which elements correspond to what types of neighbors for fast filling in MCMC
   nbhdIndices$self <- which(nbhd@entries == 20)
@@ -191,4 +193,6 @@ if(cv) {
   dataFull <- data.frame(taxon = taxon, cell = cell)
 } else treeHoldOut <- NULL
 
-save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, 'westernData.Rda'))
+
+
+save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, paste0('westernData_', productVersion, '-', uniqueRunID, '.Rda')))

@@ -9,15 +9,15 @@ require(ncdf4)
 if(!exists('uniqueRunID'))
   uniqueRunID <- ""
 if(uniqueRunID == "")
-  fnAdd <- "" else fnAdd <- paste0("-run", uniqueRunID)
+  fnAdd <- "" else fnAdd <- paste0("-", uniqueRunID)
 
 
-  load(file.path(dataDir, paste0(domain, 'Data.Rda')))
+  load(file.path(dataDir, paste0(domain, 'Data_', productVersion, fnAdd, '.Rda')))
 
 
   outputNcdfName <- paste0('PLScomposition_', domain, '_', productVersion, fnAdd, '.nc')
 
-  finalNcdfName <- paste0('PLScomposition_', domain, '_', productVersion, '-release.nc')
+  finalNcdfName <- paste0('PLScomposition_', domain, '_', productVersion, fnAdd, '_release.nc')
 
   outputNcdfPtr <- nc_open(file.path(outputDir, outputNcdfName))
 

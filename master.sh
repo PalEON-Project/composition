@@ -51,8 +51,9 @@ cd $projectDir
 # fit Bayesian composition model to western data -----------------------
 ########################################################################
 
+export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
 ./fit_western.R >& log.fit_western_${productVersion}-${uniqueRunID} &
-# this creates 'PLScomposition_western_${productVersion}.nc'
+# this creates 'PLScomposition_western_${productVersion}-${uniqueRunID}.nc'
 
 ########################################################################
 # download eastern township data -------------------------------------
@@ -85,7 +86,7 @@ cd $projectDir
 ./intersect_towns_cells.R  >& log.intersect_towns_cells &
 # creates intersection.Rda
 
-./build_eastern.R  >& log.build_eastern_${productVersion}${uniqueRunID} &
+./build_eastern.R  >& log.build_eastern_${productVersion}-${uniqueRunID} &
 # this reads intersection.Rda and creates easternData.Rda
 
 
@@ -94,8 +95,8 @@ cd $projectDir
 ########################################################################
 
 export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
-./fit_eastern.R >& log.fit_eastern_${productVersion}${uniqueRunID} &
-# this creates 'PLScomposition_eastern_${productVersion}.nc'
+./fit_eastern.R >& log.fit_eastern_${productVersion}-${uniqueRunID} &
+# this creates 'PLScomposition_eastern_${productVersion}-${uniqueRunID}.nc'
 
 ########################################################################
 # subset final output to burned-in samples
@@ -106,12 +107,14 @@ burnin=25000
 echo "burnin=$burnin" > tmp.config
 echo "domain=\"eastern\"" >> tmp.config
 ./remove_burnin.R
+# this creates 'PLScomposition_eastern_${productVersion}-release.nc'
 
 # western
 burnin=25000
 echo "burnin=$burnin" > tmp.config
 echo "domain=\"western\"" >> tmp.config
 ./remove_burnin.R 
+# this creates 'PLScomposition_western_${productVersion}-release.nc'
 
 ########################################################################
 # do cross-validation -----------------------
