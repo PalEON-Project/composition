@@ -11,7 +11,7 @@ if(!exists('uniqueRunID'))
 load(file.path(dataDir, 'westernData.Rda'))
 
 
-finalNcdfName <- paste0('PLScomposition_western_', productVersion, '-release.nc')
+finalNcdfName <- paste0('PLScomposition_western_', productVersion, '-', uniqueRunID, '.nc')
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
