@@ -71,6 +71,8 @@ runs
 0.3-15: tps, 20% cv for cells
 0.3-16: bin, no bdry, no CV (final run)
 
+
+
 -10 and -11 have adaptStartDecay at 5000 but I just changed it to be the same as $burnin
 
 running short version of -12 to see if tps w/o bdry correction shows same bdry effect as lindgren - indeed w/o bdry correction shows weird incursions seen in lindgren
@@ -79,3 +81,7 @@ then will run full long version with the bdry correction
 [*** check if see incursions when have bdry correct]
 
 changing westernData.Rda to have version number in it
+
+9/13/14:
+run 0.3-10 for bin doesn't seem to have as good mixing for sig2 as did run0 for ver 0.2
+should try to do some more test runs where I do sigma on sd scale, include alpha and sigma alone and do the start values differently; do this after do CV stuff; but actually it might just be the effect of CV

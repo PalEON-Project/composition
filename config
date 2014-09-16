@@ -13,7 +13,7 @@ ohioVersion="02"
 
 productVersion="0.3"
 
-nbhdStructure="bin"  # bin, lindgren_nu1, lindgren_nu2, tps
+nbhdStructure="tps"  # bin, lindgren_nu1, lindgren_nu2, tps
 
 # projectDir should be the main directory containing this config file
 projectDir="~/research/jmac/composition"
@@ -29,17 +29,17 @@ S=150000
 burnin=25000
 thin=500  # thinning applies to all S not just S-burnin
 secondThin=1
-resumeRun=FALSE
+resumeRun=TRUE
 numCoresToUse=1
 numSamplesForProps=10000
 
 
-buffer=6
+buffer=0
 
-uniqueRunID="10"
+uniqueRunID="12"
 
 seed=0
 
-cv=TRUE
+cv=FALSE
 cellHoldOutPct=0.95
 treeHoldOutPct=0.05

@@ -131,15 +131,17 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   Uprop <- chol(B)
 
 
-  # sample alphas given Ws and sigmas (and mus/etas if relevant) 
-  for(p in 1:P){
-    if(!nbhdStructure %in% c('bin', 'tps')) {
-      means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv[[p]])))
-    } else {
-      Vinv <- C / sigma2_current[p]
-      means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n))
+  # sample alphas given Ws and sigmas (and mus/etas if relevant)
+  if(!resumeRun) {
+    for(p in 1:P){
+      if(!nbhdStructure %in% c('bin', 'tps')) {
+        means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv[[p]])))
+      } else {
+        Vinv <- C / sigma2_current[p]
+        means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n))
+      }
+      alpha_next[,p] <- alpha_current[,p] <- means + backsolve(U[[p]], rnorm(I))
     }
-    alpha_next[,p] <- alpha_current[,p] <- means + backsolve(U[[p]], rnorm(I))
   }
 
   # Gathering some indices outside the loop
