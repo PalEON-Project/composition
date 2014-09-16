@@ -99,8 +99,8 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   
   U <- list()
   dfAdj <- 0
-  if(nbhdStructure == "bin") dfAdj <- 1
-  if(nbhdStructure == "tps") dfAdj <- 2
+  if(nbhdStructure == "bin") dfAdj <- 1 # intercept
+  if(nbhdStructure == "tps") dfAdj <- 3 # intercept and linear in cardinal directions
   
   if(!nbhdStructure %in% c('bin', 'tps')) {
     Uc <- UcProp <- list()
@@ -231,7 +231,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         prop <- adaptScale[p] * adaptedL[[p]] %*% rnorm(2)
         sigma2_next[p] <- exp(log(sigma2_current[p]) + prop[1])
         eta_next[p] <- eta_current[p] + prop[2]
-        if(sigma2_next[p] < 0 || eta_next[p] < etaBounds[1] || eta_next[p] > etaBounds[2])  {
+        if(sigma2_next[p] < 0.0001 || eta_next[p] < etaBounds[1] || eta_next[p] > etaBounds[2])  {
           accept <- FALSE 
         } else { 
                                         #           B <- Vinv[[p]]
@@ -268,13 +268,17 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
                                         # sample alphas
           means <- backsolve(Uprop, UtWi)
           alpha_next[,p] <- means + backsolve(Uprop, rnorm(I))
-          U[[p]]@entries <- Uprop@entries
-          U[[p]]@entries[1] <- U[[p]]@entries[1] # force copy
+
+          U[[p]] <- Uprop
+          Uc[[p]] <- UcProp
+          # with update to spam 1.0.1 the machinations below no longer needed
+          #U[[p]]@entries <- Uprop@entries
+          #U[[p]]@entries[1] <- U[[p]]@entries[1] # force copy
                                         # since .Fortran in update.spam in 0.41-0 does not do a copy
                                         # and R 3.1 doesn't recognize that a copy needs to be made
                                         # only reason 3.0 does do copy is because it's in a list...!
-          Uc[[p]]@entries <- UcProp@entries
-          Uc[[p]]@entries[1] <- Uc[[p]]@entries[1]
+          #Uc[[p]]@entries <- UcProp@entries
+          #Uc[[p]]@entries[1] <- Uc[[p]]@entries[1]
           Vinv[[p]] <- VinvProp
         } else {
           sigma2_next[p] <- sigma2_current[p]
@@ -317,8 +321,10 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
                                         # sample alphas
           means <- backsolve(Uprop, UtWi)
           alpha_next[,p] <- means + backsolve(Uprop, rnorm(I))
-          U[[p]]@entries <- Uprop@entries
-          U[[p]]@entries[1] <- U[[p]]@entries[1] # force copy
+          U[[p]] <- Uprop
+          # with update to spam 1.0.1 these steps not needed
+          #U[[p]]@entries <- Uprop@entries
+          #U[[p]]@entries[1] <- U[[p]]@entries[1] # force copy
                                         # since .Fortran in update.spam in 0.41-0 does not do a copy
                                         # and R 3.1 doesn't recognize that a copy needs to be made
                                         # only reason 3.0 does do copy is because it's in a list...!

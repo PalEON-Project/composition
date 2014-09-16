@@ -29,7 +29,7 @@ S=150000
 burnin=25000
 thin=500  # thinning applies to all S not just S-burnin
 secondThin=1
-resumeRun=TRUE
+resumeRun=FALSE
 numCoresToUse=1
 numSamplesForProps=10000
 
@@ -40,6 +40,6 @@ uniqueRunID="12"
 
 seed=0
 
-cv=FALSE
+cv=TRUE
 cellHoldOutPct=0.95
 treeHoldOutPct=0.05
