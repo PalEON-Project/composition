@@ -44,6 +44,8 @@ cd $projectDir
 # preprocess western data ----------------------------------------------
 ########################################################################
 
+# cp config_{version}-{runID} config
+
 ./build_western.R >& log.build_western_${productVersion}-${uniqueRunID} &
 # this creates 'westernData.Rda'
 
@@ -122,7 +124,7 @@ echo "domain=\"western\"" >> tmp.config
 
 if [ $cv = "TRUE" ]
 then
-    ./calc_cv_western.R >& log.calc_cv_western_${productVersion}${uniqueRunID} &
+    ./calc_cv_western.R >& log.calc_cv_western_${productVersion}-${uniqueRunID} &
 fi
 
 

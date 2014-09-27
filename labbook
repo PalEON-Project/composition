@@ -78,10 +78,22 @@ runs
 running short version of -12 to see if tps w/o bdry correction shows same bdry effect as lindgren - indeed w/o bdry correction shows weird incursions seen in lindgren
 
 then will run full long version with the bdry correction
-[*** check if see incursions when have bdry correct]
+[*** check if see incursions when have bdry correct - yes some but not as bad as w/ lindgren (9/27/14)]
 
 changing westernData.Rda to have version number in it
 
 9/13/14:
 run 0.3-10 for bin doesn't seem to have as good mixing for sig2 as did run0 for ver 0.2
 should try to do some more test runs where I do sigma on sd scale, include alpha and sigma alone and do the start values differently; do this after do CV stuff; but actually it might just be the effect of CV
+
+9/14/14:
+had to modify code because in tps run I was getting sig2 go to 0 for one rare taxon (bl gm/sw gum?). so now I have a lower bound of .0001
+
+9/18/14:
+checking that lindgren_nu1 with modified spam-related code and new spam version gives same results as before - it's fine as long as I make sure to use same boundary
+
+9/27/14:
+
+made config files (e.g., config_0.3-11) for each run and said in master to do a cp to 'config'
+
+arggh - the 0.3-12 tps run has no bdry so not totally consistent with bin and lindgren_nu1

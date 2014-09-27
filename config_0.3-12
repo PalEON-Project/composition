@@ -13,7 +13,7 @@ ohioVersion="02"
 
 productVersion="0.3"
 
-nbhdStructure="lindgren_nu1"  # bin, lindgren_nu1, lindgren_nu2, tps
+nbhdStructure="tps"  # bin, lindgren_nu1, lindgren_nu2, tps
 
 # projectDir should be the main directory containing this config file
 projectDir="~/research/jmac/composition"
@@ -36,7 +36,7 @@ numSamplesForProps=10000
 
 buffer=6
 
-uniqueRunID="11"
+uniqueRunID="12"
 
 seed=0
 

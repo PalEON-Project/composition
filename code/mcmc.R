@@ -9,8 +9,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
   if(!identical(hyperpar, c(-0.5, 0)))
     stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
-  
-  
+
   exclude <- is.na(y)
   if(areallyAggregated) {
     exclude <- exclude | is.na(town)
@@ -160,7 +159,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   
   if(!identical(hyperpar, c(-0.5, 0)))
     stop("Error (runMCMC): joint sampling not set up to use any prior other than flat on sd scale.")
-  
+
   count <- 0
   for(s in sampleIterates){
     count <- count + 1
@@ -290,6 +289,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       eta_current <- eta_next
       sigma2_current <- sigma2_next
       alpha_current  <- alpha_next
+
     } else {  # nbhdStructure == 'bin' or == 'tps'
       for(p in 1:P){
 
