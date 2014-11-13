@@ -4,10 +4,11 @@ library(ncdf4)
 source("config")
 
 if(!exists('uniqueRunID'))
-  uniqueRunID <- ""
+  stop("should have 'uniqueRunID' set")
 
 load(file.path(dataDir, paste0('westernData_', productVersion, '-', uniqueRunID, '.Rda')))
 
+replaceZeroWithThis <- 1e-5 # 1/10 of the 10000 samples
 
 finalNcdfName <- paste0('PLScomposition_western_', productVersion, '-', uniqueRunID, '_release.nc')
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
@@ -36,80 +37,40 @@ dataTreeTest <- as.matrix(treeHoldOut)[ , c(2, 1)]
 nC <- nrow(dataCellTest)
 nT <- nrow(dataTreeTest)
 
+heldOutEmpProbs <- matrix(0, nCells, nTaxa)
+for(p in seq_len(nTaxa)) {
+  tbl <- table(dataCellTest[dataCellTest[ , 2] == p, 1])
+  heldOutEmpProbs[as.numeric(names(tbl)) , p] <- tbl
+}
+
+treesPerCell <- rowSums(heldOutEmpProbs)
+heldOutEmpProbs <- heldOutEmpProbs / treesPerCell
+
+treeCountCut <- 0
+numTrees <- treesPerCell[treesPerCell > treeCountCut]
+
+
 ### checks
 
 if(FALSE) {
   tmp = matrix(pm[,15],m1,m2)[,m2:1]
   image.plot(1:m1,1:m2,tmp)
   
-  heldOutEmpProbs <- matrix(0, nCells, nTaxa)
-  for(p in seq_len(nTaxa)) {
-    tbl <- table(dataCellTest[dataCellTest[ , 2] == p, 1])
-    heldOutEmpProbs[as.numeric(names(tbl)) , p] <- tbl
-  }
-  
-  treesPerCell <- rowSums(heldOutEmpProbs)
-  heldOutEmpProbs <- heldOutEmpProbs / treesPerCell
-  
   tmp = matrix(heldOutEmpProbs[,15],m1,m2)[,m2:1]
   image.plot(1:m1,1:m2,tmp)
 
-  heldOutEmpProbs <- matrix(0, nCells, nTaxa)
-  for(p in seq_len(nTaxa)) {
-    tbl <- table(dataTreeTest[dataTreeTest[ , 2] == p, 1])
-    heldOutEmpProbs[as.numeric(names(tbl)) , p] <- tbl
-  }
-
-  treesPerCell <- rowSums(heldOutEmpProbs)
-  heldOutEmpProbs <- heldOutEmpProbs / treesPerCell
-
-  tmp = matrix(heldOutEmpProbs[,15],m1,m2)[,m2:1]
-  image.plot(1:m1,1:m2,tmp)
-
-
 }
 
 
+results <- array(NA, c(7, 2, 2))
+attributes(results)$dimnames[[1]] <- c('brier','logdensity','mspe','mae','coverage','mean_int_len','median_int_len')
+attributes(results)$dimnames[[2]] <- c('cell','tree')
+attributes(results)$dimnames[[3]] <- c('post_mean_of_score','score_of_post_mean')
 
+samples <- array(NA, c(7, 2, nSamples))
+attributes(samples)$dimnames[[1]] <- c('brier','logdensity','mspe','mae','coverage','mean_int_len','median_int_len')
+attributes(samples)$dimnames[[2]] <- c('cell','tree')
 
-######################################################
-### log posterior density
-######################################################
-
-### using posterior mean
-
-logDensCellPoint <- sum(log(pm[dataCellTest]))
-logDensTreePoint <- sum(log(pm[dataTreeTest]))
-
-if(is.infinite(logDensCellPoint)) {
-  tmp <- pm[dataCellTest]
-  tmp[tmp == 0] <- .00001
-  logDensCellPoint <- sum(log(tmp))
-}
-if(is.infinite(logDensTreePoint)) {
-  tmp <- pm[dataTreeTest]
-  tmp[tmp == 0] <- .00001
-  logDensTreePoint <- sum(log(tmp))
-}
-
-### using posterior samples
-predsTrunc <- preds
-predsTrunc[predsTrunc == 0] <- 0.00001  # to deal with loss of digits because of sampling of probs given alphas
-
-
-logDensCell <- rep(0, nSamples)
-logDensTree <- rep(0, nSamples)
-
-for(s in seq_len(nSamples)) {
-  logDensCell[s] <- sum(log(predsTrunc[ , , s][dataCellTest]))
-  logDensTree[s] <- sum(log(predsTrunc[ , , s][dataTreeTest]))
-}
-
-nullLogDensCell <- nC*log(1/nTaxa)
-nullLogDensTree <- nT*log(1/nTaxa)
-
-mean(logDensCell)
-mean(logDensTree)
 
 ######################################################
 ### Brier score
@@ -119,12 +80,12 @@ mean(logDensTree)
 phat <- pm[dataCellTest[ , 1], ]
 yvals <- matrix(0, nr = nC, nc = nTaxa)
 yvals[cbind(seq_len(nC), dataCellTest[, 2])] <- 1
-brierCellPoint <- sum((phat - yvals)^2)
+results['brier','cell','score_of_post_mean'] <- sum((phat - yvals)^2)
 
 phat <- pm[dataTreeTest[ , 1], ]
 yvals <- matrix(0, nr = nT, nc = nTaxa)
 yvals[cbind(seq_len(nT), dataTreeTest[, 2])] <- 1
-brierTreePoint <- sum((phat - yvals)^2)
+results['brier','tree','score_of_post_mean'] <- sum((phat - yvals)^2)
 
 ### using posterior samples
 
@@ -145,42 +106,76 @@ for(s in seq_len(nSamples)) {
   brierTree[s] <- sum((phat - yvals)^2)
 }
 
-mean(brierCell)
-mean(brierTree)
+samples['brier','cell',] <- brierCell
+samples['brier','tree',] <- brierTree
+
+results['brier','cell','post_mean_of_score'] <- mean(brierCell)
+results['brier','tree','post_mean_of_score'] <- mean(brierTree)
+
+
+######################################################
+### log posterior density
+######################################################
+
+### using posterior mean
+
+logDensCellPoint <- sum(log(pm[dataCellTest]))
+logDensTreePoint <- sum(log(pm[dataTreeTest]))
+
+if(is.infinite(logDensCellPoint)) {
+  tmp <- pm[dataCellTest]
+  tmp[tmp == 0] <- replaceZeroWithThis
+  logDensCellPoint <- sum(log(tmp))
+}
+if(is.infinite(logDensTreePoint)) {
+  tmp <- pm[dataTreeTest]
+  tmp[tmp == 0] <- replaceZeroWithThis
+  logDensTreePoint <- sum(log(tmp))
+}
+
+results['logdensity','cell','score_of_post_mean'] <- logDensCellPoint
+results['logdensity','tree','score_of_post_mean'] <- logDensTreePoint
+
+
+### using posterior samples
+predsTrunc <- preds
+predsTrunc[predsTrunc == 0] <- replaceZeroWithThis  # to deal with loss of digits because of sampling of probs given alphas
+
+
+logDensCell <- rep(0, nSamples)
+logDensTree <- rep(0, nSamples)
+
+for(s in seq_len(nSamples)) {
+  logDensCell[s] <- sum(log(predsTrunc[ , , s][dataCellTest]))
+  logDensTree[s] <- sum(log(predsTrunc[ , , s][dataTreeTest]))
+}
+
+samples['logdensity','cell',] <- logDensCell
+samples['logdensity','tree',] <- logDensTree
+
+nullLogDensCell <- nC*log(1/nTaxa)
+nullLogDensTree <- nT*log(1/nTaxa)
+
+results['logdensity','cell','post_mean_of_score'] <- mean(logDensCell)
+results['logdensity','tree','post_mean_of_score'] <- mean(logDensTree)
+
+
 
 ########################################################
 ### MSPE/MAE on cell-level
 #########################################################
 
-heldOutEmpProbs <- matrix(0, nCells, nTaxa)
-for(p in seq_len(nTaxa)) {
-  tbl <- table(dataCellTest[dataCellTest[ , 2] == p, 1])
-  heldOutEmpProbs[as.numeric(names(tbl)) , p] <- tbl
-}
-
-treesPerCell <- rowSums(heldOutEmpProbs)
-heldOutEmpProbs <- heldOutEmpProbs / treesPerCell
-
-treeCountCut <- 0
-numTrees <- treesPerCell[treesPerCell > treeCountCut]
 
 ### weighted mae/mspe using posterior mean
 
 tmp1 <- heldOutEmpProbs[treesPerCell > treeCountCut, ]
 tmp2 <- apply(preds[treesPerCell > treeCountCut, , ], c(1, 2), mean)
 
-mspeWgt = sum(numTrees*(tmp1 - tmp2)^2)/sum(numTrees*nTaxa)
-maeWgt = sum(numTrees*abs(tmp1 - tmp2))/sum(numTrees*nTaxa)
+results['mspe','cell','score_of_post_mean'] <- sum(numTrees*(tmp1 - tmp2)^2)/sum(numTrees*nTaxa)
+results['mae','cell','score_of_post_mean'] <- sum(numTrees*abs(tmp1 - tmp2))/sum(numTrees*nTaxa)
 
 nullMspe = mean((tmp1 - 1/nTaxa)^2)
 nullMae = mean(abs(tmp1 - 1/nTaxa))
-
-#treeCountCut <- 19
-#tmp1 <- heldOutEmpProbs[treesPerCell > treeCountCut, ]
-#tmp2 <- apply(preds[treesPerCell > treeCountCut, , ], c(1, 2), mean)
-
-#mspe = mean((tmp1 - tmp2)^2)
-#mae = mean(abs(tmp1 - tmp2))
 
 ### using posterior samples
 
@@ -196,8 +191,12 @@ for(s in seq_len(nSamples)) {
 #  logDensTree[s] <- sum(log(preds[ , , s][dataTreeTest]))
 }
 
-mean(mspeWgtSamples)
-mean(maeWgtSamples)
+samples['mspe','cell',] <- mspeWgtSamples
+samples['mae','cell',] <- maeWgtSamples
+
+
+results['mspe','cell','post_mean_of_score'] <- mean(mspeWgtSamples)
+results['mae','cell','post_mean_of_score'] <- mean(maeWgtSamples)
 
 
 ########################################################
@@ -205,17 +204,16 @@ mean(maeWgtSamples)
 #########################################################
 
 cutoff = 50
-wh <- which(treesPerCell > cutoff)
-
+wh <- which(treesPerCell >= cutoff)
 yhat = heldOutEmpProbs[wh, ]
+
 pr = preds[wh, , ]
 
 qu1 = apply(pr, c(1,2), quantile, .025)
 qu2 = apply(pr, c(1,2), quantile, .975)
 
-c(mean(qu2-qu1), median(qu2-qu1))
-
-mean(yhat <= qu2 & yhat >= qu1)
+intLength <- c(mean(qu2-qu1), median(qu2-qu1))
+coverage <- mean(yhat <= qu2 & yhat >= qu1)
 
 trCnt = treesPerCell[wh]
 prY = pr
@@ -226,6 +224,8 @@ for(s in 1:nSamples)
 qu1 = apply(prY, c(1,2), quantile, .025)
 qu2 = apply(prY, c(1,2), quantile, .975)
 
-c(mean(qu2-qu1), median(qu2-qu1))
+results['mean_int_len','cell','post_mean_of_score'] <- mean(qu2-qu1)
+results['median_int_len','cell','post_mean_of_score'] <- median(qu2-qu1)
+results['coverage','cell','post_mean_of_score'] <- mean(yhat <= qu2 & yhat >= qu1)
 
-mean(yhat <= qu2 & yhat >= qu1)
+save(results, samples, file = file.path(outputDir, paste0('PLScomposition_western_', productVersion, '-', uniqueRunID, '-cvResults.Rda')))

@@ -1,5 +1,7 @@
-add_map_albers <- function(plot_obj, map_data = usShp, dat){
-  p <- plot_obj + geom_path(data = map_data, aes(x = long, y = lat, group = group), size = 0.1) + 
+add_map_albers <- function(plot_obj, map_data = usShp, dat, lims = FALSE){
+  p <- plot_obj + geom_path(data = map_data, aes(x = long, y = lat, group = group), size = 0.1)
+  if(lims)
+    p <- p + 
     scale_x_continuous(limits = c(min(dat$X, na.rm = TRUE), max(dat$X, na.rm = TRUE))) +
       scale_y_continuous(limits = c(min(dat$Y, na.rm = TRUE), max(dat$Y, na.rm = TRUE)))
   return(p)
@@ -15,7 +17,7 @@ theme_clean <- function(plot_obj){
   return(plot_obj)
 }
 
-make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_data = usShp, facet = TRUE, col = terrain.colors, reverse_colors = TRUE, print = TRUE) {
+make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_data = usShp, facet = TRUE, col = terrain.colors, reverse_colors = TRUE, print = TRUE, ncol = 5, lims = FALSE) {
 
   make_map <- function() {
 
@@ -34,9 +36,9 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
     if(reverse_colors) col <- rev(col)
     d <- ggplot() + geom_raster(data = taxon_dat_long, aes(x = X, y = Y, fill = factor(value))) + 
       scale_fill_manual(values = col, labels = breaklabels, name = legendName) + coord_fixed() + theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16))
-    d <- add_map_albers(plot_obj = d, map_data = map_data, dat = taxon_dat_long)
+    d <- add_map_albers(plot_obj = d, map_data = map_data, dat = taxon_dat_long, lims = lims)
     if(facet) {
-      d <- d + facet_wrap(~variable, ncol=5)
+      d <- d + facet_wrap(~variable, ncol = ncol)
     } else {
       d <- d + ggtitle(nm)
     }
@@ -66,4 +68,7 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
     }
   }
 }
+
+
+
 

@@ -97,3 +97,11 @@ checking that lindgren_nu1 with modified spam-related code and new spam version 
 made config files (e.g., config_0.3-11) for each run and said in master to do a cp to 'config'
 
 arggh - the 0.3-12 tps run has no bdry so not totally consistent with bin and lindgren_nu1
+
+10/18/14:
+I reran the 0.3-12 tps to deal with the inconsistency
+
+my 0.3 dataset differs from 0.3 on wiki. It's almost the same as the 0.3-1 except for 39 extra other hardwood in 0.3-1 all of which occur in cells that in my 0.3 had no other hardwood
+
+11/11/14:
+calc_cv_western.R now saves results info in form of arrays in *-cvResults.Rda

@@ -34,12 +34,12 @@ numCoresToUse=1
 numSamplesForProps=10000
 
 
-buffer=6
+buffer=0
 
-uniqueRunID="11"
+uniqueRunID="16"
 
 seed=0
 
 cv=TRUE
-cellHoldOutPct=0.95
+cellHoldOutPct=0.80
 treeHoldOutPct=0.05
