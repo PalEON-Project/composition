@@ -13,14 +13,14 @@ tmp <- chol(as.spam(diag(rep(1,3)))) # chol.spam failing in runMCMC for some rea
 
 if(!exists('uniqueRunID'))
   uniqueRunID <- ""
+if(uniqueRunID == "")
+  fnAdd <- "" else fnAdd <- paste0("-", uniqueRunID)
 
 
 # fit model --------------------------------------------------
 
-load(file.path(dataDir, 'easternData.Rda'))
+load(file.path(dataDir, paste0('easternData-', productVersion, fnAdd, '.Rda'))
 
-if(uniqueRunID == "")
-  fnAdd <- "" else fnAdd <- paste0("-run", uniqueRunID)
 
 latentNcdfName <- paste0('PLScomposition_raw_eastern_', productVersion, fnAdd, '.nc')
 
@@ -33,8 +33,9 @@ if(!resumeRun) {
 out = runMCMC(y = data$taxon, cell = NULL, C = nbhd, town = data$town,
   townCellOverlap = townCellOverlap, townCellIds = townCellIds,
   S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0),
+  nbhdStructure = nbhdStructure,
   areallyAggregated = TRUE, outputNcdfName = latentNcdfName, taxa = taxa,
-  numCores = numCoresToUse, runID = paste0("-eastern-run", uniqueRunID), dataDir = dataDir,
+  numCores = numCoresToUse, runID = paste0("_eastern-", productVersion, '-', uniqueRunID), dataDir = dataDir,
   outputDir = outputDir)
 
 

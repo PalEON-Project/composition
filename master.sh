@@ -6,6 +6,8 @@
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
 source config
 
+export OMP_NUM_THREADS=1
+
 # get cookie with Wiki authentication info
 wget --post-data="u=${WIKI_USERNAME}&p=${WIKI_PASSWORD}&sectok=b7649cb05e87dc0f45d9d91851a7b097&id=start&r=1&do=login" --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies https://paleon.geography.wisc.edu/doku.php/dw__login
 
@@ -42,15 +44,18 @@ cd $projectDir
 # preprocess western data ----------------------------------------------
 ########################################################################
 
-./build_western.R >& log.build_western${uniqueRunID} &
+# cp config_{version}-{runID} config
+
+./build_western.R >& log.build_western_${productVersion}-${uniqueRunID} &
 # this creates 'westernData.Rda'
 
 ########################################################################
 # fit Bayesian composition model to western data -----------------------
 ########################################################################
 
-./fit_western.R >& log.fit_western${uniqueRunID} &
-# this creates 'PLScomposition_western_${productVersion}.nc'
+export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
+./fit_western.R >& log.fit_western_${productVersion}-${uniqueRunID} &
+# this creates 'PLScomposition_western_${productVersion}-${uniqueRunID}.nc'
 
 ########################################################################
 # download eastern township data -------------------------------------
@@ -83,7 +88,7 @@ cd $projectDir
 ./intersect_towns_cells.R  >& log.intersect_towns_cells &
 # creates intersection.Rda
 
-./build_eastern.R  >& log.build_eastern${uniqueRunID} &
+./build_eastern.R  >& log.build_eastern_${productVersion}-${uniqueRunID} &
 # this reads intersection.Rda and creates easternData.Rda
 
 
@@ -92,8 +97,8 @@ cd $projectDir
 ########################################################################
 
 export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
-./fit_eastern.R >& log.fit_eastern${uniqueRunID} &
-# this creates 'PLScomposition_eastern_${productVersion}.nc'
+./fit_eastern.R >& log.fit_eastern_${productVersion}-${uniqueRunID} &
+# this creates 'PLScomposition_eastern_${productVersion}-${uniqueRunID}.nc'
 
 ########################################################################
 # subset final output to burned-in samples
@@ -104,12 +109,23 @@ burnin=25000
 echo "burnin=$burnin" > tmp.config
 echo "domain=\"eastern\"" >> tmp.config
 ./remove_burnin.R
+# this creates 'PLScomposition_eastern_${productVersion}-release.nc'
 
 # western
 burnin=25000
 echo "burnin=$burnin" > tmp.config
 echo "domain=\"western\"" >> tmp.config
 ./remove_burnin.R 
+# this creates 'PLScomposition_western_${productVersion}-release.nc'
+
+########################################################################
+# do cross-validation -----------------------
+########################################################################
+
+if [ $cv = "TRUE" ]
+then
+    ./calc_cv_western.R >& log.calc_cv_western_${productVersion}-${uniqueRunID} &
+fi
 
 
 ########################################################################

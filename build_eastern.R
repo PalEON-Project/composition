@@ -167,4 +167,4 @@ taxon <- rep(rep(1:nTaxa, nTowns), times = tmp)
 
 data <- data.frame(taxon = taxon, town = town)
 
-save(data, townCellOverlap, townCellIds, taxa, nbhd, m1, m2, nTaxa, nTowns, file = paste0(file.path(dataDir, 'easternData.Rda')))
+save(data, townCellOverlap, townCellIds, taxa, nbhd, m1, m2, nTaxa, nTowns, file = file.path(dataDir, paste0('easternData_', productVersion, '-', uniqueRunID, '.Rda')))

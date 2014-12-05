@@ -43,14 +43,14 @@ maskWater = is.na(water)
 #waterE = paleon.water[easternDomainX, sort(180-easternDomainY)]
 #regE = paleon.reg[easternDomainX, sort(180- easternDomainY)]
 
+load(file.path(dataDir, paste0('easternData-', productVersion, fnAdd, '.Rda'))
 
-load(file.path(dataDir, 'easternData.Rda'))
 load(file.path(dataDir, 'intersection.Rda'))
 
 coord <- expand.grid(X = xGrid[easternDomainX], Y = rev(yGrid)[easternDomainY])
   
 
-finalNcdfName <- paste0('PLScomposition_eastern_', productVersion, '-release.nc')
+finalNcdfName <- paste0('PLScomposition_eastern_', productVersion, fnAdd, '_release.nc')
 
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))

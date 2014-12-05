@@ -43,7 +43,6 @@ maskWater = is.na(water)
 # western data/results
 
 load(file.path(dataDir, 'westernData.Rda'))
-coordsWest <- coord
 
 rawWest <- matrix(0, nrow = nCells, ncol = nTaxa)
 for(p in 1:nTaxa) {
@@ -181,6 +180,7 @@ dev.off()
 
 
 # this is not working and not sure exactly how to combine the raster info in West with polygon info in east - probably convert rasters to polygons and then combine the polygons
+# actually (11/22/14) I figured that out and code is in paper.R in the composition_paper folder
 if(FALSE) { 
 # plot raw data as colored polygons
 # it would be nice to have this as a function, but there is a lot of pre-processing...

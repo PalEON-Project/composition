@@ -8,15 +8,21 @@ source(file.path(codeDir, "mcmc.R"))
 source(file.path(codeDir, "netCDF.R"))
 source(file.path(codeDir, "set_domain.R"))
 
+library(RhpcBLASctl)
+
+omp_set_num_threads(1)
+
+
 if(!exists('uniqueRunID'))
   uniqueRunID <- ""
+if(uniqueRunID == "")
+  fnAdd <- "" else fnAdd <- paste0("-", uniqueRunID)
 
 # fit model --------------------------------------------------
 
-load(file.path(dataDir, 'westernData.Rda'))
 
-if(uniqueRunID == "")
-  fnAdd <- "" else fnAdd <- paste0("-run", uniqueRunID)
+load(file.path(dataDir, paste0('westernData_', productVersion, fnAdd, '.Rda')))
+
 
 latentNcdfName <- paste0('PLScomposition_raw_western_', productVersion, fnAdd, '.nc')
 
@@ -26,10 +32,9 @@ if(!resumeRun) {
 }
 
 
-
 # this creates netCDF with draws of the latent variables
 # change to signature of new runMCMC that allows township data
-out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, numCores = numCoresToUse, runID = paste0("-western-run", uniqueRunID), dataDir = dataDir, outputDir = outputDir)
+out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, Cindices = nbhdIndices, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), nbhdStructure = nbhdStructure, areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, numCores = numCoresToUse, adaptStartDecay = burnin, runID = paste0("_western_", productVersion, '-', uniqueRunID), dataDir = dataDir, outputDir = outputDir)
 
 
 # post process to get draws of proportions
@@ -42,6 +47,7 @@ outputNcdfPtr <- nc_open(file.path(outputDir, outputNcdfName), write = TRUE)
 
 # this draws the proportions based on the draws of the latent variables
 set.seed(0)
+
 drawProportions(latentNcdfPtr, outputNcdfPtr, numMCsamples = numSamplesForProps, numInputSamples = floor(S/thin), secondThin = secondThin, I = m1*m2, taxa = taxa$taxonName)
 
 nc_close(latentNcdfPtr)

@@ -4,6 +4,7 @@
 # assumes data in western.csv
 source("config")
 
+set.seed(0)
 
 source(file.path(codeDir, "graph.R"))
 
@@ -89,12 +90,33 @@ cat("\n")
 ########################################################################
 # subset to portion of PalEON Albers grid and create graph -------------
 ########################################################################
-
 source(file.path(codeDir, 'set_domain.R'))
 
-data <- data[ coord$X <= easternLimitOfWesternDomain, ]
-coord <- coord[ coord$X <= easternLimitOfWesternDomain, ]
+
+if(buffer > 0) {
+  coordFull <- expand.grid(X = xGrid, Y=rev(yGrid))
+  coordFull$fullID <- seq_len(nrow(coordFull))
   
+  coord$origID <- seq_len(nrow(coord))
+  
+  dataFull <- as.data.frame(matrix(0, nrow = nrow(coordFull), ncol = nTaxa))
+  names(dataFull) <- names(data)
+  
+  tmp <- merge(coordFull, coord,
+               all.x = TRUE, all.y = FALSE)
+  
+  tmp <- tmp[order(tmp$fullID), ]
+  origRows <- !is.na(tmp$origID)
+  dataFull[origRows, ] <- data[tmp$origID[origRows], ]
+
+  data <- dataFull[ coordFull$X <= easternLimitOfWesternDomain, ]
+  coord <- coordFull[ coordFull$X <= easternLimitOfWesternDomain, ]
+  coord$ID <- coord$fullID
+} else {
+  data <- data[ coord$X <= easternLimitOfWesternDomain, ]
+  coord <- coord[ coord$X <= easternLimitOfWesternDomain, ]
+}
+
 data <- data[order(coord$ID), ]
 coord <- coord[order(coord$ID), ]
 dimnames(coord)[[1]] <- coord$ID
@@ -103,18 +125,51 @@ m1 <- length(westernDomainX)
 m2 <- length(westernDomainY)
 nCells <- m1 * m2
 
-tmp <- nbhdStructure
-substring(tmp, 1 ,1) <- toupper(substring(tmp, 1, 1))
-graphFileName <- paste0('graph', tmp, m1, 'x', m2, '.csv')
-if(!file.exists(file.path(dataDir, graphFileName)))
-  graphCreate(m1, m2, type = nbhdStructure, dir = dataDir, fn = graphFileName)
-nbhd <- graphRead(file.path(dataDir, graphFileName), m1, m2)
+type <- nbhdStructure
+substring(type, 1 ,1) = toupper(substring(type, 1, 1))
+fns <- rep("", 2)
+fns[1] <- paste('graph', type, '-',  m1, 'x', m2, '.csv', sep='')
+fns[2] <- paste('graphCats', type, '-', m1, 'x', m2, '.csv', sep='')
+
+if(!file.exists(file.path(dataDir, fns[1])) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, fns[2])))) {
+  fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir)
+} 
+
+nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure, dir = dataDir)
+
+if(!nbhdStructure %in% c('bin', 'tps')) {  
+  # remove boundary stuff for now while wait to hear from Finn about boundary correction
+  nbhd@entries[nbhd@entries %in% c(-4, -6)] <- -8
+  nbhd@entries[nbhd@entries %in% c(4, 10, 11, 18, 19)] <- 20
+}
+if(nbhdStructure == "lindgren_nu1" || nbhdStructure == "tps") {
+  nbhdIndices <- list()
+  # determine which elements correspond to what types of neighbors for fast filling in MCMC
+  nbhdIndices$self <- which(nbhd@entries == 20)
+  nbhdIndices$cardNbr <- which(nbhd@entries == -8)
+  nbhdIndices$otherNbr <- which(nbhd@entries %in% c(1,2))
+} else nbhdIndices <- NULL
+
+########################################################################
+# split into train and test --------------------------------------------
+########################################################################
+
+if(cv) {
+  dataFull <- data
+  locsToSplit <- which(coord$X < 300000)
+  numLocs <- length(locsToSplit)
+  numOut <- round(cellHoldOutPct * numLocs)
+  smp <- sample(c(rep(TRUE, numOut), rep(FALSE, numLocs - numOut)), size = numOut)
+  holdOutCells <- locsToSplit[smp]
+  data[holdOutCells, ] <- 0
+} else {
+  holdOutCells <- dataFull <- NULL
+}
 
 
 ########################################################################
 # create data objects for MCMC fitting ---------------------------------
 ########################################################################
-
 
 data <- as.matrix(data)
 
@@ -124,4 +179,20 @@ cell <- rep(which(total > 0), times = total[total > 0])
 
 data <- data.frame(taxon = taxon, cell = cell)
 
-save(nbhd, m1, m2, nTaxa, nCells, data, coord, taxa, file = paste0(file.path(dataDir, 'westernData.Rda')))
+if(cv) {
+  nTrees <- nrow(data)
+  numTreeOut <- round(treeHoldOutPct*nTrees)
+  smp <- sample(c(rep(TRUE, numTreeOut), rep(FALSE, nTrees - numTreeOut)), size = nTrees)
+  treeHoldOut <- data[smp, ]
+  data <- data[!smp, ]
+  
+  dataFull <- as.matrix(dataFull)
+  taxon <- rep(rep(1:nTaxa, nCells), times = c(t(dataFull)))
+  total <- rowSums(dataFull)
+  cell <- rep(which(total > 0), times = total[total > 0])
+  dataFull <- data.frame(taxon = taxon, cell = cell)
+} else treeHoldOut <- NULL
+
+
+
+save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, paste0('westernData_', productVersion, '-', uniqueRunID, '.Rda')))
