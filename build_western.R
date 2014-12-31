@@ -7,6 +7,11 @@ source("config")
 set.seed(0)
 
 source(file.path(codeDir, "graph.R"))
+source(file.path(codeDir, 'set_domain.R'))
+
+m1 <- length(westernDomainX)
+m2 <- length(westernDomainY)
+nCells <- m1 * m2
 
 ########################################################################
 # read data --------------------------------------------------
@@ -14,9 +19,16 @@ source(file.path(codeDir, "graph.R"))
 
 fn <- file.path(dataDir, 'western.csv')
 data <- read.csv(fn, header = TRUE, stringsAsFactors=FALSE, na.strings = "NA")
+# this next bit deals with periods read.csv() puts in names
 nm <- scan(pipe(paste0("head -n 1 ", fn)), sep = ',', what = 'character')
 substring(nm, 1, 1) <- toupper(substring(nm, 1, 1))
 names(data) <- nm
+
+# reorder so in same order as in previous western csv versions
+ord <- matrix(1:(m1*m2), ncol = m2, byrow = TRUE)
+ord <- ord[ , m2:1]
+ord <- c(ord)
+data <- data[ord, ]
 
 cat(paste0("Read ", nrow(data), " rows from western.csv, with field names: "))
 cat(names(data), sep = ',')
@@ -90,7 +102,7 @@ cat("\n")
 ########################################################################
 # subset to portion of PalEON Albers grid and create graph -------------
 ########################################################################
-source(file.path(codeDir, 'set_domain.R'))
+
 
 
 if(buffer > 0) {
@@ -121,9 +133,6 @@ data <- data[order(coord$ID), ]
 coord <- coord[order(coord$ID), ]
 dimnames(coord)[[1]] <- coord$ID
 
-m1 <- length(westernDomainX)
-m2 <- length(westernDomainY)
-nCells <- m1 * m2
 
 type <- nbhdStructure
 substring(type, 1 ,1) = toupper(substring(type, 1, 1))
@@ -132,7 +141,7 @@ fns[1] <- paste('graph', type, '-',  m1, 'x', m2, '.csv', sep='')
 fns[2] <- paste('graphCats', type, '-', m1, 'x', m2, '.csv', sep='')
 
 if(!file.exists(file.path(dataDir, fns[1])) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, fns[2])))) {
-  fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir)
+  fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir, fn = fns[1], fn_cats = fns[2])
 } 
 
 nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure, dir = dataDir)

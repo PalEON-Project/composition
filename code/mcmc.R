@@ -82,7 +82,11 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     #alpha_current <- alpha_next <- matrix(0, I, P)
     alpha_current <- alpha_next <- matrix(rnorm(I*P), I, P)
 
-    sigma2_current <- sigma2_next <- runif(P, 0.1, 3)
+    sigma2_current <- sigma2_next <- runif(P, 0.1, 2)
+    cnt <- table(y)
+    # have less common taxa start with larger sigma2
+    sigma2_current[cnt < 2000] <- sigma2_next[cnt < 2000] <- runif(P, 0.5, 2)
+    
     if(!nbhdStructure %in% c('bin', 'tps')) {
       mu_current <- mu_next <- runif(P, -2, 2)
       eta_current <- eta_next <- runif(P, 0, 5) # rep(log(3), P)

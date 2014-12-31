@@ -105,3 +105,25 @@ my 0.3 dataset differs from 0.3 on wiki. It's almost the same as the 0.3-1 excep
 
 11/11/14:
 calc_cv_western.R now saves results info in form of arrays in *-cvResults.Rda
+
+12/7/14:
+I reported to Simon that initial v0.4 of gridded western has a lot more tamarack and spruce than before, counts in some (many?) MN and WI cells that differ a bit from v 0.3 and is missing fir in east (in MI)
+
+12/9/14:
+the white spots for oak in SE MN seem real based on plotting %age no.tree - there is a N-S band there with very high % no.tree
+also biomass estimates show 0 biomass in that area as well
+
+updated level3s to deal with bl gum, sw gum, bl gum/sw gum, and related issues given new data from Simon; uploading this to the Wiki
+
+planning to model cherry,dogwood,gum,walnut which have ~2300, ~3100, ~2600, ~3500 trees but not sycamore ~1500 trees
+
+have to do atl white cedar (336 trees) as its not hardwood o.w. have to leave out entirely as we do bald cypress (only 5 trees)
+
+so 23 taxa total, but 21 in west since won't model chestnut or atl white cedar there
+
+I checked the 02 OH and 0.9 eastern and the CSV files look reasonable except for one OH township with 13k trees - asking Charlie about it
+OH CSV and shapefiles correspond
+eastern CSV has ID not matching ID hidden in polygons. IDs in polygons start at 0, those in CSV start at 1
+
+Charlie says the Buckskin OH township with a ton of data is legit: Yes a weird Twp., but the value is a total from Crowl's 1937 thesis for all the Virginia Military Tract (lots of metes & bounds properties with many witness trees per lot) in Ross Co. west of the Scioto River. It is an outlier for type of survey, the number of trees,  and size of the sample polygon. It is however realistic and very informative on the local proportions. Sorry if it weights too heavily in any analysis. So much for diversity as it cannot be easily broken out.
+

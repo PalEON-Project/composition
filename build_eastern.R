@@ -1,9 +1,7 @@
 #!/usr/bin/Rscript
 source("config")
 
-
 source(file.path(codeDir, "graph.R"))
-
 
 ########################################################################
 # deal with town-cell intersections-------------------------------------
@@ -40,26 +38,30 @@ source(file.path(codeDir, 'set_domain.R'))
 m1 <- length(easternDomainX)
 m2 <- length(easternDomainY)
 
-tmp <- nbhdStructure
-substring(tmp, 1 ,1) <- toupper(substring(tmp, 1, 1))
-graphFileName <- paste0('graph', tmp, m1, 'x', m2, '.csv')
-if(!file.exists(file.path(dataDir, graphFileName)))
-  graphCreate(m1, m2, type = nbhdStructure, dir = dataDir, fn = graphFileName)
-nbhd <- graphRead(file.path(dataDir, graphFileName), m1, m2)
+type <- nbhdStructure
+substring(type, 1 ,1) = toupper(substring(type, 1, 1))
+fns <- rep("", 2)
+fns[1] <- paste('graph', type, '-',  m1, 'x', m2, '.csv', sep='')
+fns[2] <- paste('graphCats', type, '-', m1, 'x', m2, '.csv', sep='')
 
+if(!file.exists(file.path(dataDir, fns[1])) || (nbhdStructure != 'bin' && !file.exists(file.path(dataDir, fns[2])))) {
+  fns <- graphCreate(m1, m2, type = nbhdStructure, dir = dataDir, fn = fns[1], fn_cats = fns[2])
+} 
+nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure, dir = dataDir)
 
 
 ########################################################################
 # read data ------------------------------------------------------------
 ########################################################################
 
-easternDataDir <- paste0(easternVersionID, '.', easternVersion)
-ohioDataDir <- paste0(ohioVersionID, '.', ohioVersion)
+easternDataDir <- "eastern"
+ohioDataDir <- "ohio"
 
 fn <- file.path(dataDir, easternDataDir, paste0(easternVersionID, 'polygonsver', easternVersion, '.csv'))
 data1 <- read.csv(fn)
+# this next bit deals with fact that R puts periods for spaces and /
 names(data1) <- scan(pipe(paste0("head -n 1 ", fn)), sep = ',', what = 'character')
-data1 <- data1[order(data1$ID), 8:31]
+data1 <- data1[order(data1$ID), 6:ncol(data1)]
 
 cat(paste0("Read ", nrow(data1), " rows from ", fn, ", with field names: "))
 cat(names(data1), sep = ',')
@@ -68,7 +70,7 @@ cat("\n")
 fn <- file.path(dataDir, ohioDataDir, paste0("OH", ohioVersionID, "polygonsver", ohioVersion, ".csv"))
 data2 <- read.csv(fn)
 names(data2) <- scan(pipe(paste0("head -n 1 ", fn)), sep = ',', what = 'character')
-data2 <- data2[order(data2$ID), 10:33]
+data2 <- data2[order(data2$ID), 10:ncol(data2)]
 
 cat(paste0("Read ", nrow(data2), " rows from ", fn, ", with field names: "))
 cat(names(data2), sep = ',')
@@ -115,10 +117,9 @@ if(numConv) {
        if(nameConversions$to[i] %in% names(data2)) {
          data2[nameConversions$to[i]] <- data2[nameConversions$to[i]] + data2[nameConversions$from[i]]
        } else data2[nameConversions$to[i]] <- data2[nameConversions$from[i]]
+    if(nameConversions$from[i] %in% c(names(data1), names(data2)))
+      cat("Grouping ", nameConversions$from[i], " into ", nameConversions$to[i], ".\n")
   }
-  if(nameConversions$from[i] %in% c(names(data1), names(data2)))
-    cat("Grouping ", nameConversions$from[i], " into ", nameConversions$to[i], ".\n")
-
   data1 <- data1[ , !(names(data1) %in% nameConversions$from)]
   data2 <- data2[ , !(names(data2) %in% nameConversions$from)]
 }

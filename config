@@ -5,18 +5,18 @@
 
 # note that Albers grid and subsetting information for the subdomains is in code/set_domain.R
 
-westernVersion="0.3"
+westernVersion="0.4"
 easternVersionID="1372"
-easternVersion="08"
+easternVersion="0.9"
 ohioVersionID="471"  
 ohioVersion="02"
 
 productVersion="0.3"
 
-nbhdStructure="lindgren_nu1"  # bin, lindgren_nu1, lindgren_nu2, tps
+nbhdStructure="bin"  # bin, lindgren_nu1, lindgren_nu2, tps
 
 # projectDir should be the main directory containing this config file
-projectDir="~/research/jmac/composition"
+projectDir="${HOME}/research/jmac/composition"
 codeDir="code"
 
 # temporary directories for storing intermediate data and final output
@@ -40,6 +40,6 @@ uniqueRunID="16"
 
 seed=0
 
-cv=TRUE
-cellHoldOutPct=0.80
+cv=FALSE
+cellHoldOutPct=0.95
 treeHoldOutPct=0.05

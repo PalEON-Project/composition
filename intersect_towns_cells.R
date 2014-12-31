@@ -13,8 +13,8 @@ require(raster)
 
 source("config")
 
-easternDataDir <- paste0(easternVersionID, '.', easternVersion)
-ohioDataDir <- paste0(ohioVersionID, '.', ohioVersion)
+easternDataDir <- "eastern"
+ohioDataDir <- "ohio"
 
 ####################################################################
 # read in shape file info and create raster for PalEON Albers grid

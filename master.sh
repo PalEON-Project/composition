@@ -23,9 +23,11 @@ function wgetWiki() {
 ########################################################################
 
 # get taxon conversion table
-cd $projectDir
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Blevel3s_v${productVersion}.csv" -O level3s_v${productVersion}.csv
-
+if [ ! -e level3s_v${productVersion}.csv ]
+then
+    cd $projectDir
+    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Blevel3s_v${productVersion}.csv" -O level3s_v${productVersion}.csv
+fi
 
 ########################################################################
 # download western data ------------------------------------------------
@@ -33,9 +35,16 @@ wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_p
 
 cd $dataDir
 # note this doesn't work because of authentication issues, so navigate to here via browser instead
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Bwesterncompv${westernVersion}.csv" -O western-${westernVersion}.csv
+if [ ! -e western-${westernVersion}.csv ]
+then
+    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bwestern_comp_v${westernVersion}.csv" -O western-${westernVersion}.csv
+fi
 
-rm -f western.csv
+if [ -e western.csv ]
+then
+    rm -f western.csv
+fi
+
 ln -s western-${westernVersion}.csv western.csv
 
 cd $projectDir
@@ -61,23 +70,20 @@ export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
 # download eastern township data -------------------------------------
 ########################################################################
 
+
 cd $dataDir
-# note this doesn't work because of authentication issues, so navigate to here via browser instead
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Boh${ohioVersionID}v${ohioVersion}.zip" -O ohiocomp-${ohioVersionID}.${ohioVersion}.zip
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3B${easternVersionID}centroid_polygonver${easternVersion}.zip" -O easterncomp-${easternVersionID}.${easternVersion}.zip
 
-ohioDir=${ohioVersionID}.${ohioVersion}
-mkdir ${ohioDir}
-cp oh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip ${ohioDir}
-cd ${ohioDir}
-unzip oh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip
+mkdir ohio
+mkdir eastern
 
-cd ..
-easternDir=${easternVersionID}.${easternVersion}
-mkdir ${easternDir}
-cp ${easternVersionID}centroid_polygonsver${easternVersion}.zip ${easternDir}
-cd ${easternDir}
-unzip ${easternVersionID}centroid_polygonsver${easternVersion}.zip
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Boh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip" -O ohio/ohio.zip
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3B${easternVersionID}polygonsver${easternVersion}.zip" -O eastern/eastern.zip
+
+cd ohio
+unzip ohio.zip
+
+cd ../eastern
+unzip eastern.zip
 
 cd $projectDir
 

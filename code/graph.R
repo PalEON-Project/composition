@@ -39,7 +39,7 @@ graphCreate <- function(m1, m2, type = "bin", dir = getwd(), fn = NULL, fn_cats 
       tmp=tmp[tmp[,1]>=0&tmp[,1]<m1&tmp[,2]>=0&tmp[,2]<m2,]
       nbs=sort((tmp[,1])+(m2-1 - tmp[,2])*m1)
       write(c(grid[i],length(nbs),nbs),file.path(dir, fn),ncol=length(nbs)+2,sep=' ',append=TRUE)
-      fn_cats <- NULL
+      fn_cats <- ""
     }
   } else { # tps
     write(m,file.path(dir, fn))
