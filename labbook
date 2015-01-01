@@ -121,9 +121,16 @@ have to do atl white cedar (336 trees) as its not hardwood o.w. have to leave ou
 
 so 23 taxa total, but 21 in west since won't model chestnut or atl white cedar there
 
-I checked the 02 OH and 0.9 eastern and the CSV files look reasonable except for one OH township with 13k trees - asking Charlie about it
+I checked the 02 OH and 0.9 eastern and the CSV files look reasonable except for one OH township with 13k trees - asking Charlie about it - see below
 OH CSV and shapefiles correspond
 eastern CSV has ID not matching ID hidden in polygons. IDs in polygons start at 0, those in CSV start at 1
 
 Charlie says the Buckskin OH township with a ton of data is legit: Yes a weird Twp., but the value is a total from Crowl's 1937 thesis for all the Virginia Military Tract (lots of metes & bounds properties with many witness trees per lot) in Ross Co. west of the Scioto River. It is an outlier for type of survey, the number of trees,  and size of the sample polygon. It is however realistic and very informative on the local proportions. Sorry if it weights too heavily in any analysis. So much for diversity as it cannot be easily broken out.
 
+12/31/14:
+Jody has fixed the ID stuff in eastern 1372 v0.9
+
+I'm cleaning up files in the repository and putting log and config files for the
+ runs in summer/fall 2014 that used bad v 0.3 western data in data_paper_old_runs
+
+version 0.3-0 will be the core data product run, while 0.3-{1,2,...} will be the CV runs

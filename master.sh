@@ -19,29 +19,55 @@ function wgetWiki() {
 }
 
 ########################################################################
+# create directories    ------------------------------------------------
+########################################################################
+
+if [ ! -e $plotDir ]; then
+    mkdir $plotDir
+fi
+if [ ! -e $outputDir ]; then
+    mkdir $outputDir
+fi
+if [ ! -e $dataDir ]; then
+    mkdir $dataDir
+fi
+if [ ! -e $tmpDir ]; then
+    mkdir $tmpDir
+fi
+
+########################################################################
+# set up version-controlled packages   ---------------------------------
+########################################################################
+
+# ./setup_Rpackages.R
+
+# don't redo this every time!
+
+########################################################################
 # download meta info    ------------------------------------------------
 ########################################################################
 
 # get taxon conversion table
-if [ ! -e level3s_v${productVersion}.csv ]
-then
+if [ ! -e level3s_v${productVersion}.csv ]; then
     cd $projectDir
     wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Blevel3s_v${productVersion}.csv" -O level3s_v${productVersion}.csv
 fi
+if [ -e level3s.csv ]; then
+    rm -f level3s.csv
+fi
 
+ln -s level3s_v${productVersion}.csv level3s.csv
 ########################################################################
 # download western data ------------------------------------------------
 ########################################################################
 
 cd $dataDir
 # note this doesn't work because of authentication issues, so navigate to here via browser instead
-if [ ! -e western-${westernVersion}.csv ]
-then
+if [ ! -e western-${westernVersion}.csv ]; then
     wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bwestern_comp_v${westernVersion}.csv" -O western-${westernVersion}.csv
 fi
 
-if [ -e western.csv ]
-then
+if [ -e western.csv ]; then
     rm -f western.csv
 fi
 
@@ -55,16 +81,18 @@ cd $projectDir
 
 # cp config_{version}-{runID} config
 
-./build_western.R >& log.build_western_${productVersion}-${uniqueRunID} &
-# this creates 'westernData.Rda'
+if [ ! -e data_western_${runID}.Rda ]; then
+./build_western.R >& log.build_western_${runID} &
+# this creates 'data_western_${runID}.Rda'
+fi
 
 ########################################################################
 # fit Bayesian composition model to western data -----------------------
 ########################################################################
 
 export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
-./fit_western.R >& log.fit_western_${productVersion}-${uniqueRunID} &
-# this creates 'PLScomposition_western_${productVersion}-${uniqueRunID}.nc'
+    ./fit_western.R >& log.fit_western_${runID} &
+# this creates 'PLScomposition_western_${runID}_full.nc'
 
 ########################################################################
 # download eastern township data -------------------------------------
@@ -73,17 +101,25 @@ export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
 
 cd $dataDir
 
-mkdir ohio
-mkdir eastern
+if [ ! -e ohio ]; then
+    mkdir ohio
+fi
+if [ ! -e eastern ]; then
+    mkdir eastern
+fi
 
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Boh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip" -O ohio/ohio.zip
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3B${easternVersionID}polygonsver${easternVersion}.zip" -O eastern/eastern.zip
+if [ ! -e oh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip ]; then
+    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Boh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip" -O ohio/ohio.zip
+    cd ohio
+    unzip ohio.zip
+    cd ..
+fi
 
-cd ohio
-unzip ohio.zip
-
-cd ../eastern
-unzip eastern.zip
+if [ ! -e ${easternVersionID}polygonsver${easternVersion}.zip ]; then
+    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3B${easternVersionID}polygonsver${easternVersion}.zip" -O eastern/eastern.zip
+    cd eastern
+    unzip eastern.zip
+fi
 
 cd $projectDir
 
@@ -91,20 +127,21 @@ cd $projectDir
 # preprocess eastern township data -------------------------------------
 ########################################################################
 
-./intersect_towns_cells.R  >& log.intersect_towns_cells &
-# creates intersection.Rda
+if [ ! -e data_eastern_${runID}.Rda ]; then
+    ./intersect_towns_cells.R  >& log.intersect_towns_cells &
+# creates intersection_${runID}.Rda
 
-./build_eastern.R  >& log.build_eastern_${productVersion}-${uniqueRunID} &
-# this reads intersection.Rda and creates easternData.Rda
-
+    ./build_eastern.R  >& log.build_eastern_${runID} &
+# this reads intersection_eastern_${runID}.Rda and creates 'data_eastern_${runID}.Rda
+fi
 
 ########################################################################
 # fit Bayesian composition model to eastern data -----------------------
 ########################################################################
 
 export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
-./fit_eastern.R >& log.fit_eastern_${productVersion}-${uniqueRunID} &
-# this creates 'PLScomposition_eastern_${productVersion}-${uniqueRunID}.nc'
+./fit_eastern.R >& log.fit_eastern_${runID} &
+# this creates 'PLScomposition_eastern_${runID}_full.nc'
 
 ########################################################################
 # subset final output to burned-in samples
@@ -112,25 +149,22 @@ export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
 
 # eastern
 burnin=25000
-echo "burnin=$burnin" > tmp.config
-echo "domain=\"eastern\"" >> tmp.config
-./remove_burnin.R
-# this creates 'PLScomposition_eastern_${productVersion}-release.nc'
+domain=eastern
+./remove_burnin.R $burnin $domain 
+# this creates 'PLScomposition_eastern_${runID}.nc'
 
 # western
 burnin=25000
-echo "burnin=$burnin" > tmp.config
-echo "domain=\"western\"" >> tmp.config
-./remove_burnin.R 
-# this creates 'PLScomposition_western_${productVersion}-release.nc'
+domain=western
+./remove_burnin.R $burnin $domain
+# this creates 'PLScomposition_western_${runID}.nc'
 
 ########################################################################
 # do cross-validation -----------------------
 ########################################################################
 
-if [ $cv = "TRUE" ]
-then
-    ./calc_cv_western.R >& log.calc_cv_western_${productVersion}-${uniqueRunID} &
+if [ $cv = "TRUE" ]; then
+    ./calc_cv_western.R >& log.calc_cv_western_${runID} &
 fi
 
 
@@ -141,9 +175,9 @@ fi
 
 # download us_alb.zip, water tiff, domain tiff from Wiki
 # http://144.92.235.115/dokuwiki/doku.php/public_data%3Brasters
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Bus_alb.zip" -O tmp_alb.zip
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Bwater_pct_albv0.1.tif" -O tmp_water.tif
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bpublic_data%3Bdomain%3Bpaleon_full_alb_v0.1.tif" -O tmp_domain.tif
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bus_alb.zip" -O tmp_alb.zip
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bwater_pct_albv0.1.tif" -O tmp_water.tif
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bdomain%3Bpaleon_full_alb_v0.1.tif" -O tmp_domain.tif
 
 cp tmp_domain.tif $dataDir/paleonDomain.tif
 cp tmp_water.tif $dataDir/water.tif
@@ -157,6 +191,5 @@ cd $projectDir
 
 # this creates the mask (paleonMask.nc) for screening out water and non-paleon state cells
 ./create_mask.R >& log.create_mask &
-
 
 ./plot_full.R

@@ -8,7 +8,7 @@ source(file.path(codeDir, "graph.R"))
 ########################################################################
 
 
-load(file.path(dataDir, 'intersection.Rda'))
+load(file.path(dataDir, paste0('intersection_', runID, '.Rda')))
 # reads in 'inter'
 
 maxPossibleCells <- 70
@@ -85,8 +85,7 @@ data2[is.na(data2)] <- 0
 # subset and manipulate taxa ------------------------------------
 ########################################################################
 
-taxaInfo <- read.csv(paste0('level3s_v', productVersion, '.csv'),
-                     stringsAsFactors = FALSE)
+taxaInfo <- read.csv('level3s.csv', stringsAsFactors = FALSE)
 taxaInfo[ , ncol(taxaInfo)] <- gsub("\\s", "", taxaInfo[ , ncol(taxaInfo)])  # strip any (trailing) whitespace
 
 taxaOtherHardwood <- taxaInfo[["Level.3a"]][taxaInfo[["Level.3s"]] == "Other hardwood"]
@@ -168,4 +167,4 @@ taxon <- rep(rep(1:nTaxa, nTowns), times = tmp)
 
 data <- data.frame(taxon = taxon, town = town)
 
-save(data, townCellOverlap, townCellIds, taxa, nbhd, m1, m2, nTaxa, nTowns, file = file.path(dataDir, paste0('easternData_', productVersion, '-', uniqueRunID, '.Rda')))
+save(data, townCellOverlap, townCellIds, taxa, nbhd, m1, m2, nTaxa, nTowns, file = file.path(dataDir, paste0('data_eastern_', runID, '.Rda')))

@@ -1,23 +1,26 @@
 #!/usr/bin/Rscript
 # subsets to post-burnin samples 
 source("config")
-source("tmp.config")
+
+# grab from input args after sourcing config as we want to overwrite burnin
+args <- commandArgs(TRUE)
+# now args is a character vector containing the arguments
+burnin <- as.numeric(args[1])
+domain <- args[2]
+
+runID <- paste0(domain, "_", runID)
+
+#source("tmp.config")
 source(file.path(codeDir, 'netCDF.R'))
 source(file.path(codeDir, 'set_domain.R'))
 require(ncdf4)
 
-if(!exists('uniqueRunID'))
-  uniqueRunID <- ""
-if(uniqueRunID == "")
-  fnAdd <- "" else fnAdd <- paste0("-", uniqueRunID)
+load(file.path(dataDir, paste0('data_', runID, '.Rda')))
 
 
-  load(file.path(dataDir, paste0(domain, 'Data_', productVersion, fnAdd, '.Rda')))
+  outputNcdfName <- paste0('PLScomposition_', runID, '_full.nc')
 
-
-  outputNcdfName <- paste0('PLScomposition_', domain, '_', productVersion, fnAdd, '.nc')
-
-  finalNcdfName <- paste0('PLScomposition_', domain, '_', productVersion, fnAdd, '_release.nc')
+  finalNcdfName <- paste0('PLScomposition_', runID, '.nc')
 
   outputNcdfPtr <- nc_open(file.path(outputDir, outputNcdfName))
 

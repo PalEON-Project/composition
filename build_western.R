@@ -47,8 +47,7 @@ data[is.na(data)] <- 0
 # subset and manipulate taxa ------------------------------------
 ########################################################################
 
-taxaInfo <- read.csv(paste0('level3s_v', productVersion, '.csv'),
-                     stringsAsFactors = FALSE)
+taxaInfo <- read.csv('level3s.csv', stringsAsFactors = FALSE)
 taxaInfo[ , ncol(taxaInfo)] <- gsub("\\s", "", taxaInfo[ , ncol(taxaInfo)])  # strip any (trailing) whitespace
 
 taxaOtherHardwood <- taxaInfo[["Level.3a"]][taxaInfo[["Level.3s"]] == "Other hardwood"]
@@ -204,4 +203,4 @@ if(cv) {
 
 
 
-save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, paste0('westernData_', productVersion, '-', uniqueRunID, '.Rda')))
+save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, paste0('data_western', runID, '.Rda')))

@@ -85,6 +85,6 @@ usedIds <- c(matrix(ids, xRes, yRes)[easternDomainX, easternDomainY])
 
 inter <- inter[easternDomainX, easternDomainY, ]
 
-save(inter, usedIds, nTowns, file = file.path(dataDir, 'intersection.Rda'))
+save(inter, usedIds, nTowns, file = file.path(dataDir, paste0('intersection_eastern_', runID, '.Rda')))
 
 

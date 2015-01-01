@@ -66,7 +66,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
   S      <- S - S%%S_keep
   
   if(resumeRun) {
-    load(file.path(dataDir, paste0('lastState', runID, '.Rda')))
+    load(file.path(dataDir, paste0('lastState_', runID, '.Rda')))
     .Random.seed <<- .Random.seed
     sampleIterates <- (s+1):S
     
@@ -447,14 +447,14 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     if(s %% 250 == 0) {
       if(nbhdStructure %in% c('bin', 'tps')) 
         etaStore <- muStore <- eta_next <- mu_next <- adaptedCov <- adaptedL <- adaptScale <- NULL else logSigma2_propSD <- NULL
-      save(logSigma2_propSD, adaptedCov, adaptedL, adaptScale, alpha_next, sigma2_next, eta_next, mu_next, s, cell, .Random.seed, W, muStore, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState', runID, '.Rda')))
+      save(logSigma2_propSD, adaptedCov, adaptedL, adaptScale, alpha_next, sigma2_next, eta_next, mu_next, s, cell, .Random.seed, W, muStore, sigma2store, etaStore, storeIndex, file = file.path(dataDir, paste0('lastState_', runID, '.Rda')))
     }
   } # end for s loop
 
-  save(sigma2store, file = file.path(outputDir, paste0("sigma2", runID, ".Rda")))
+  save(sigma2store, file = file.path(outputDir, paste0("sigma2_", runID, ".Rda")))
   if(!nbhdStructure %in% c('bin', 'tps')) {
-    save(muStore, file = file.path(outputDir, paste0("mu", runID, ".Rda")))
-    save(etaStore, file = file.path(outputDir, paste0("eta", runID, ".Rda")))
+    save(muStore, file = file.path(outputDir, paste0("mu_", runID, ".Rda")))
+    save(etaStore, file = file.path(outputDir, paste0("eta_", runID, ".Rda")))
   }
   invisible(NULL)
 }

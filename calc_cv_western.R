@@ -3,14 +3,16 @@
 library(ncdf4)
 source("config")
 
+runID <- paste0('western_', runID)
+
 if(!exists('uniqueRunID'))
   stop("should have 'uniqueRunID' set")
 
-load(file.path(dataDir, paste0('westernData_', productVersion, '-', uniqueRunID, '.Rda')))
+load(file.path(dataDir, paste0('data_', runID, '_full.Rda')))
 
 replaceZeroWithThis <- 1e-5 # 1/10 of the 10000 samples
 
-finalNcdfName <- paste0('PLScomposition_western_', productVersion, '-', uniqueRunID, '_release.nc')
+finalNcdfName <- paste0('PLScomposition_', runID, '.nc')
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
@@ -228,4 +230,4 @@ results['mean_int_len','cell','post_mean_of_score'] <- mean(qu2-qu1)
 results['median_int_len','cell','post_mean_of_score'] <- median(qu2-qu1)
 results['coverage','cell','post_mean_of_score'] <- mean(yhat <= qu2 & yhat >= qu1)
 
-save(results, samples, file = file.path(outputDir, paste0('PLScomposition_western_', productVersion, '-', uniqueRunID, '-cvResults.Rda')))
+save(results, samples, file = file.path(outputDir, paste0('PLScomposition_', runID, '-cvResults.Rda')))

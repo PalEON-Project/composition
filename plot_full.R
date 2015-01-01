@@ -6,18 +6,17 @@ source(file.path(codeDir, "plot.R"))
 source(file.path(codeDir, "set_domain.R"))
 
 require(ncdf4)
-
-require(reshape) # reshape2?
 require(ggplot2)
-require(gridExtra)
 require(maptools)
-require(gpclib)
-require(sp)
 require(rgdal)
-require(fields)
 require(raster)
-require(maps)
-require(ColorBrewer)
+
+#require(reshape) # reshape2?
+#require(gridExtra)
+#require(gpclib)
+#require(fields)
+#require(maps)
+#require(RColorBrewer)
 
 usShp <- readShapeLines(file.path(dataDir, 'us_alb.shp'), proj4string=CRS('+init=epsg:3175'))
 usShp@data$id <- rownames(usShp@data)
@@ -42,7 +41,7 @@ maskWater = is.na(water)
 
 # western data/results
 
-load(file.path(dataDir, 'westernData.Rda'))
+load(file.path(dataDir, paste0('data_western_', runID, '.Rda')))
 
 rawWest <- matrix(0, nrow = nCells, ncol = nTaxa)
 for(p in 1:nTaxa) {
@@ -55,7 +54,7 @@ total[total == 0] <- 1
 rawWest <- rawWest / total
 dimnames(rawWest)[[2]] <- gsub("/", "ZZZ", taxa$taxonName)  # otherwise both / and " " become "." so can't distinguish when I substitute back in for "."
 
-finalNcdfName <- paste0('PLScomposition_western_', productVersion, '-release.nc')
+finalNcdfName <- paste0('PLScomposition_western_', runID, '.nc')
 
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
@@ -80,12 +79,12 @@ psdWest <- apply(preds, c(1, 2), 'sd')
 
 # eastern data/results
 
-load(file.path(dataDir, 'easternData.Rda'))
-load(file.path(dataDir, 'intersection.Rda'))
+load(file.path(dataDir, paste0('data_eastern_', runID, '.Rda')))
+load(file.path(dataDir, paste0('intersection_eastern_', runID, '.Rda')))
 
   
 
-finalNcdfName <- paste0('PLScomposition_eastern_', productVersion, '-release.nc')
+finalNcdfName <- paste0('PLScomposition_eastern_', runID, '.nc')
 
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
@@ -157,11 +156,11 @@ figWth = 22
 figHgtIndiv = 16*.5
 figWthIndiv = 22*.5
 
-pdf(file.path(outputDir, paste0('PLScomposition_full_', productVersion, '_fits.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_fits.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = pmFull, breaks = propBreaks, coords = coordFull, legendName = 'fitted proportions', map_data = usFortified, facet = TRUE)
 dev.off()
 
-pdf(file.path(outputDir, paste0('PLScomposition_full_', productVersion, '_fits_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
+pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_fits_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
 make_veg_map(data = pmFull, breaks = propBreaks, coords = coordFull, legendName = 'fitted proportions', map_data = usFortified, facet = FALSE)
 dev.off()
 
@@ -170,11 +169,11 @@ psdBreaks = c(0, 0.01, 0.03, 0.05, 0.075, 0.10, 0.15, 0.2, 0.25)
 #psd[psd > .3] = 0.3
 #psdBreaks = c(0, 0.01, 0.03, 0.05, 0.10, 0.15, 0.2, 0.25, 0.3)
   
-pdf(file.path(outputDir, paste0('PLScomposition_full_', productVersion, '_uncertainty.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_uncertainty.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = psdFull, breaks = psdBreaks, coords = coordFull, legendName = 'std. error', map_data = usFortified, col = heat.colors, facet = TRUE)
 dev.off()
 
-pdf(file.path(outputDir, paste0('PLScomposition_full_', productVersion, '_uncertainty_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
+pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_uncertainty_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
 make_veg_map(data = psdFull, breaks = psdBreaks, coords = coordFull, legendName = 'std. error', map_data = usFortified, col = heat.colors, facet = FALSE)
 dev.off()
 
@@ -254,7 +253,7 @@ d <- ggplot(taxon_dat_long, aes(X, Y, group = id)) +
 d <- add_map_albers(plot_obj = d, map_data = usFortified, dat = taxon_dat_long)
 d <- theme_clean(d)
 
-pdf(file.path(outputDir, paste0('PLScomposition_eastern_', productVersion, '_rawData.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('PLScomposition_eastern_', runID, '_rawData.pdf')), height = figHgt, width = figWth)
 print(d)
 dev.off()
 

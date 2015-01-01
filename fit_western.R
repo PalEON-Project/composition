@@ -4,6 +4,8 @@
 
 source("config")
 
+runID <- paste0("eastern_", runID)
+
 source(file.path(codeDir, "mcmc.R"))
 source(file.path(codeDir, "netCDF.R"))
 source(file.path(codeDir, "set_domain.R"))
@@ -12,19 +14,13 @@ library(RhpcBLASctl)
 
 omp_set_num_threads(1)
 
-
-if(!exists('uniqueRunID'))
-  uniqueRunID <- ""
-if(uniqueRunID == "")
-  fnAdd <- "" else fnAdd <- paste0("-", uniqueRunID)
-
 # fit model --------------------------------------------------
 
 
-load(file.path(dataDir, paste0('westernData_', productVersion, fnAdd, '.Rda')))
+load(file.path(dataDir, paste0('data_', runID, '.Rda')))
 
 
-latentNcdfName <- paste0('PLScomposition_raw_western_', productVersion, fnAdd, '.nc')
+latentNcdfName <- paste0('PLScomposition_raw_', runID, '.nc')
 
 if(!resumeRun) {
   set.seed(0)
@@ -34,11 +30,11 @@ if(!resumeRun) {
 
 # this creates netCDF with draws of the latent variables
 # change to signature of new runMCMC that allows township data
-out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, Cindices = nbhdIndices, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), nbhdStructure = nbhdStructure, areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, numCores = numCoresToUse, adaptStartDecay = burnin, runID = paste0("_western_", productVersion, '-', uniqueRunID), dataDir = dataDir, outputDir = outputDir)
+out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, Cindices = nbhdIndices, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), nbhdStructure = nbhdStructure, areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, numCores = numCoresToUse, adaptStartDecay = burnin, runID = runID, dataDir = dataDir, outputDir = outputDir)
 
 
 # post process to get draws of proportions
-outputNcdfName <- paste0('PLScomposition_western_', productVersion, fnAdd, '.nc')
+outputNcdfName <- paste0('PLScomposition_', runID, '_full.nc')
 
 makeAlbersNetCDF(name = 'proportion', units = 'unitless (proportion from 0 to 1)', longname = 'relative composition, relative to all tree taxa,', fn = outputNcdfName, dir = outputDir, x = sort(unique(coord$X)), y = sort(unique(coord$Y)), taxa = taxa$taxonName, numSamples = floor(S/(thin*secondThin)))
 

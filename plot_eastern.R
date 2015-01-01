@@ -2,22 +2,16 @@
 
 source("config")
 
+runID <- paste0('eastern_', runID)
+
 source(file.path(codeDir, "plot.R"))
 source(file.path(codeDir, "set_domain.R"))
 
-library(ncdf4)
-
-library(reshape) # reshape2?
-library(ggplot2)
-library(gridExtra)
-library(maptools)
-library(gpclib)
-library(sp)
-library(rgdal)
-library(fields)
-library(raster)
-library(maps)
-
+require(ncdf4)
+require(ggplot2)
+require(maptools)
+require(rgdal)
+require(raster)
 
 usShp <- readShapeLines(file.path(dataDir, 'us_alb.shp'), proj4string=CRS('+init=epsg:3175'))
 usShp@data$id <- rownames(usShp@data)
@@ -43,14 +37,14 @@ maskWater = is.na(water)
 #waterE = paleon.water[easternDomainX, sort(180-easternDomainY)]
 #regE = paleon.reg[easternDomainX, sort(180- easternDomainY)]
 
-load(file.path(dataDir, paste0('easternData-', productVersion, fnAdd, '.Rda'))
+load(file.path(dataDir, paste0('data_', runID, fnAdd, '.Rda')))
 
-load(file.path(dataDir, 'intersection.Rda'))
+load(file.path(dataDir, paste0('intersection_', runID, '.Rda')))
 
 coord <- expand.grid(X = xGrid[easternDomainX], Y = rev(yGrid)[easternDomainY])
   
 
-finalNcdfName <- paste0('PLScomposition_eastern_', productVersion, fnAdd, '_release.nc')
+finalNcdfName <- paste0('PLScomposition_', runID, '.nc')
 
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
@@ -86,7 +80,7 @@ propBreaks = c(0, 0.01, 0.05, 0.10, 0.15, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1)
 figHgt = 20
 figWth = 22
 
-pdf(file.path(outputDir, paste0('PLScomposition_eastern_', productVersion, '_fits.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('PLScomposition_', runID, '_fits.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = pm, breaks = propBreaks, coords = coord, legendName = 'fitted proportions', map_data = usFortified, facet = TRUE)
 dev.off()
 
@@ -95,7 +89,7 @@ psdBreaks = c(0, 0.01, 0.03, 0.05, 0.075, 0.10, 0.15, 0.2, 0.25)
 #psd[psd > .3] = 0.3
 #psdBreaks = c(0, 0.01, 0.03, 0.05, 0.10, 0.15, 0.2, 0.25, 0.3)
   
-pdf(file.path(outputDir, paste0('PLScomposition_eastern_', productVersion, '_uncertainty.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('PLScomposition_', runID, '_uncertainty.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = psd, breaks = psdBreaks, coords = coord, legendName = 'std. error', map_data = usFortified, facet = TRUE)
 dev.off()
 
@@ -153,7 +147,7 @@ d <- ggplot(taxon_dat_long, aes(X, Y, group = id)) +
 d <- add_map_albers(plot_obj = d, map_data = usFortified, dat = taxon_dat_long)
 d <- theme_clean(d)
 
-pdf(file.path(outputDir, paste0('PLScomposition_eastern_', productVersion, '_rawData.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('PLScomposition_', runID, '_rawData.pdf')), height = figHgt, width = figWth)
 print(d)
 dev.off()
 
@@ -166,12 +160,7 @@ dev.off()
 
 
 if(FALSE) {
-  if(!exists('uniqueRunID'))
-    uniqueRunID <- ""
-  if(uniqueRunID == "")
-    fnAdd <- "" else fnAdd <- paste0("-run", uniqueRunID)
-
-  load(file.path(outputDir, paste0('sigma2-eastern', fnAdd, '.Rda')))
+  load(file.path(outputDir, paste0('sigma2_', runID, '.Rda')))
   par(mfrow = c(5, 5), mai = c(.3, .3, .1, .1))
   for(p in 1:ncol(sigma2store))
     tsplot(sigma2store[ , p])
