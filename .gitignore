@@ -1,5 +1,6 @@
 *~
-
+config
+data_paper_old_runs
 backups
 backups/*
 packrat/lib*/
