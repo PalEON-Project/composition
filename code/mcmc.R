@@ -1,6 +1,7 @@
 source('code/mcmcAuxil.R')
 
-library(spam)
+require(spam)
+
 runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOverlap = NULL, townCellIds = NULL,
                    S, thin, resumeRun, hyperpar = c(-0.5, 0),
                    adaptInterval = 100, adaptStartDecay = 3000, nbhdStructure = 'bin',                  

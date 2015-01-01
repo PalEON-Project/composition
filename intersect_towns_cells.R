@@ -5,9 +5,6 @@
 # where 180 is y dimension and 296 is x dimension
 # open issue: intersection only uses discrete approximation with 100 points
 
-
-#require(rgeos)
-#require(maptools)
 require(rgdal)
 require(raster)
 

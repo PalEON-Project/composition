@@ -1,0 +1,159 @@
+PackratFormat: 1.4
+PackratVersion: 0.4.2.1
+RVersion: 3.1.2
+Repos: CRAN=http://www.cran.r-project.org,
+    BioCsoft=http://bioconductor.org/packages/2.14/bioc,
+    BioCann=http://bioconductor.org/packages/2.14/data/annotation,
+    BioCexp=http://bioconductor.org/packages/2.14/data/experiment,
+    BioCextra=http://bioconductor.org/packages/2.14/extra
+
+Package: RColorBrewer
+Source: CRAN
+Version: 1.0-5
+Hash: 6a849b729bec970204ca88b96906adbc
+
+Package: Rcpp
+Source: CRAN
+Version: 0.11.3
+Hash: d9cc0a13885961b2d004cf73b0fb68dd
+
+Package: RhpcBLASctl
+Source: CRAN
+Version: 0.14-72
+Hash: a1cd799bd4dc3e532ebd24b11a7fa55a
+
+Package: colorspace
+Source: CRAN
+Version: 1.2-4
+Hash: b775bd08a10f968fef582304b7c3ab9c
+
+Package: dichromat
+Source: CRAN
+Version: 2.0-0
+Hash: 42be2136555fa4b6167605df56d8cd7c
+
+Package: digest
+Source: CRAN
+Version: 0.6.4
+Hash: e4bf0e79b15a352510aff0de905d31e2
+
+Package: doParallel
+Source: CRAN
+Version: 1.0.8
+Hash: c5ffe9ac9595f653295484f4d2a5c25d
+Requires: foreach, iterators
+
+Package: fields
+Source: CRAN
+Version: 7.1
+Hash: 9ddf8675cce79b252776782a1d85c5f9
+Requires: maps, spam
+
+Package: foreach
+Source: CRAN
+Version: 1.4.2
+Hash: fbdaa99f6c6bd4f252c5d8412f6e79c9
+Requires: iterators
+
+Package: ggplot2
+Source: CRAN
+Version: 1.0.0
+Hash: c8bff66238347472f08b6a35608539ff
+Requires: digest, gtable, plyr, proto, reshape2, scales
+
+Package: gtable
+Source: CRAN
+Version: 0.1.2
+Hash: 0cf4a2b54c02b35dec7e74a8ebed12a0
+
+Package: inline
+Source: CRAN
+Version: 0.3.13
+Hash: b8b120573ac79d1510ba97f6953e3a88
+
+Package: iterators
+Source: CRAN
+Version: 1.0.7
+Hash: b5320a58712688d5b18c207cf256ef3f
+
+Package: labeling
+Source: CRAN
+Version: 0.3
+Hash: 568a992912caf7eeddfb121924154047
+
+Package: maps
+Source: CRAN
+Version: 2.3-7
+Hash: 4c87e5e328a6125cbe661dff2189c864
+
+Package: maptools
+Source: CRAN
+Version: 0.8-30
+Hash: 103c8ad3262b5bc7280d620ed8302328
+Requires: sp
+
+Package: munsell
+Source: CRAN
+Version: 0.4.2
+Hash: fa8af6d040041439b249351e9d16ae9a
+Requires: colorspace
+
+Package: ncdf4
+Source: CRAN
+Version: 1.12
+Hash: 37d4a120d599576447d4775ebd5aff31
+
+Package: packrat
+Source: CRAN
+Version: 0.4.2-1
+Hash: 085f944cec9b56e8a280222b5174c76e
+
+Package: plyr
+Source: CRAN
+Version: 1.8.1
+Hash: 6a287219196e18bc6261dc11b41b1ca0
+Requires: Rcpp
+
+Package: proto
+Source: CRAN
+Version: 0.3-10
+Hash: 668a9e87cedbdc5f56c396edf1bd2648
+
+Package: raster
+Source: CRAN
+Version: 2.2-31
+Hash: 87ed0a8cd614f064ae5afc3d45c6100d
+Requires: sp
+
+Package: reshape2
+Source: CRAN
+Version: 1.4
+Hash: e50809918ebb73dff47de17d36d12975
+Requires: Rcpp, plyr, stringr
+
+Package: rgdal
+Source: CRAN
+Version: 0.8-16
+Hash: 4e3d03fb47a1f57c7344928cbc8769d9
+Requires: sp
+
+Package: scales
+Source: CRAN
+Version: 0.2.4
+Hash: b8b1af97bd07818605223060386b00dd
+Requires: RColorBrewer, dichromat, labeling, munsell, plyr
+
+Package: sp
+Source: CRAN
+Version: 1.0-15
+Hash: ccab055c2835c81a8add23517d8b6219
+
+Package: spam
+Source: CRAN
+Version: 0.41-0
+Hash: 15d4c1c502b3c6af37a54f71e5006246
+
+Package: stringr
+Source: CRAN
+Version: 0.6.2
+Hash: cdde0cfa0f52cffeaca23a11a3899779

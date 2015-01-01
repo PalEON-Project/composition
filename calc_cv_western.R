@@ -1,9 +1,10 @@
 #!/usr/bin/Rscript
 
-library(ncdf4)
 source("config")
 
 runID <- paste0('western_', runID)
+
+require(ncdf4)
 
 if(!exists('uniqueRunID'))
   stop("should have 'uniqueRunID' set")

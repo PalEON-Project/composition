@@ -11,13 +11,6 @@ require(maptools)
 require(rgdal)
 require(raster)
 
-#require(reshape) # reshape2?
-#require(gridExtra)
-#require(gpclib)
-#require(fields)
-#require(maps)
-#require(RColorBrewer)
-
 usShp <- readShapeLines(file.path(dataDir, 'us_alb.shp'), proj4string=CRS('+init=epsg:3175'))
 usShp@data$id <- rownames(usShp@data)
 usFortified <- fortify(usShp, region='id')

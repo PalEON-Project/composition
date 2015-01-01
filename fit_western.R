@@ -10,7 +10,7 @@ source(file.path(codeDir, "mcmc.R"))
 source(file.path(codeDir, "netCDF.R"))
 source(file.path(codeDir, "set_domain.R"))
 
-library(RhpcBLASctl)
+require(RhpcBLASctl)
 
 omp_set_num_threads(1)
 

@@ -3,6 +3,8 @@
 # both the western PLS data and the eastern township data
 # note that these steps are intended for use on UNIX-like machines and will need to be modified for Windows (and possibly for Mac OS X)
 
+# this code is being run under R 3.1.2 and with package versioning controlled by packrat
+
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
 source config
 
