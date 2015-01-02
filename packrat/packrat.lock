@@ -150,8 +150,8 @@ Hash: ccab055c2835c81a8add23517d8b6219
 
 Package: spam
 Source: CRAN
-Version: 0.41-0
-Hash: 15d4c1c502b3c6af37a54f71e5006246
+Version: 1.0-1
+Hash: 93c30ed45a309377f3059db3c76c94df
 
 Package: stringr
 Source: CRAN

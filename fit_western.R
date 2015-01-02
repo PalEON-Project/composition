@@ -4,7 +4,7 @@
 
 source("config")
 
-runID <- paste0("eastern_", runID)
+runID <- paste0("western_", runID)
 
 source(file.path(codeDir, "mcmc.R"))
 source(file.path(codeDir, "netCDF.R"))
@@ -30,7 +30,7 @@ if(!resumeRun) {
 
 # this creates netCDF with draws of the latent variables
 # change to signature of new runMCMC that allows township data
-out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, Cindices = nbhdIndices, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), nbhdStructure = nbhdStructure, areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, numCores = numCoresToUse, adaptStartDecay = burnin, runID = runID, dataDir = dataDir, outputDir = outputDir)
+out <- runMCMC(y = data$taxon, cell = data$cell, C = nbhd, Cindices = nbhdIndices, S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0), nbhdStructure = nbhdStructure, areallyAggregated = FALSE, outputNcdfName = latentNcdfName, taxa = taxa, adaptStartDecay = burnin, runID = runID, dataDir = dataDir, outputDir = outputDir)
 
 
 # post process to get draws of proportions

@@ -4,21 +4,13 @@
 # note that these steps are intended for use on UNIX-like machines and will need to be modified for Windows (and possibly for Mac OS X)
 
 # this code is being run under R 3.1.2 and with package versioning controlled by packrat
+# restore any packages that are not installed on the system
+Rscript -e "require(packrat); packrat::restore()"
 
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
 source config
 
 export OMP_NUM_THREADS=1
-
-# get cookie with Wiki authentication info
-wget --post-data="u=${WIKI_USERNAME}&p=${WIKI_PASSWORD}&sectok=b7649cb05e87dc0f45d9d91851a7b097&id=start&r=1&do=login" --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies https://paleon.geography.wisc.edu/doku.php/dw__login
-
-export cookieArgs="--load-cookies=${dataDir}/my-cookies.txt --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies"
-
-# not working... problems with quotes I think
-function wgetWiki() {
-    wget --load-cookies=${dataDir}/my-cookies.txt --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies $1 -O $2
-}
 
 ########################################################################
 # create directories    ------------------------------------------------
@@ -38,12 +30,19 @@ if [ ! -e $tmpDir ]; then
 fi
 
 ########################################################################
-# set up version-controlled packages   ---------------------------------
+# setup for down/uploading from Wiki   ---------------------------------
 ########################################################################
 
-# ./setup_Rpackages.R
+# get cookie with Wiki authentication info
+wget --post-data="u=${WIKI_USERNAME}&p=${WIKI_PASSWORD}&sectok=b7649cb05e87dc0f45d9d91851a7b097&id=start&r=1&do=login" --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies https://paleon.geography.wisc.edu/doku.php/dw__login
 
-# don't redo this every time!
+export cookieArgs="--load-cookies=${dataDir}/my-cookies.txt --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies"
+
+# not working... problems with quotes I think
+function wgetWiki() {
+    wget --load-cookies=${dataDir}/my-cookies.txt --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies $1 -O $2
+}
+
 
 ########################################################################
 # download meta info    ------------------------------------------------
@@ -59,12 +58,13 @@ if [ -e level3s.csv ]; then
 fi
 
 ln -s level3s_v${productVersion}.csv level3s.csv
+
 ########################################################################
 # download western data ------------------------------------------------
 ########################################################################
 
 cd $dataDir
-# note this doesn't work because of authentication issues, so navigate to here via browser instead
+
 if [ ! -e western-${westernVersion}.csv ]; then
     wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bwestern_comp_v${westernVersion}.csv" -O western-${westernVersion}.csv
 fi
@@ -84,7 +84,7 @@ cd $projectDir
 # cp config_{version}-{runID} config
 
 if [ ! -e data_western_${runID}.Rda ]; then
-./build_western.R >& log.build_western_${runID} &
+    ./build_western.R >& log.build_western_${runID} &
 # this creates 'data_western_${runID}.Rda'
 fi
 
@@ -92,8 +92,7 @@ fi
 # fit Bayesian composition model to western data -----------------------
 ########################################################################
 
-export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
-    ./fit_western.R >& log.fit_western_${runID} &
+./fit_western.R >& log.fit_western_${runID} &
 # this creates 'PLScomposition_western_${runID}_full.nc'
 
 ########################################################################
@@ -130,7 +129,7 @@ cd $projectDir
 ########################################################################
 
 if [ ! -e data_eastern_${runID}.Rda ]; then
-    ./intersect_towns_cells.R  >& log.intersect_towns_cells &
+    ./intersect_towns_cells.R  >& log.intersect_towns_cells 
 # creates intersection_${runID}.Rda
 
     ./build_eastern.R  >& log.build_eastern_${runID} &

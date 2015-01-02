@@ -133,4 +133,6 @@ Jody has fixed the ID stuff in eastern 1372 v0.9
 I'm cleaning up files in the repository and putting log and config files for the
  runs in summer/fall 2014 that used bad v 0.3 western data in data_paper_old_runs
 
+also including packrat for pkg version control
+
 version 0.3-0 will be the core data product run, while 0.3-{1,2,...} will be the CV runs

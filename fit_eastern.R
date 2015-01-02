@@ -34,7 +34,7 @@ out = runMCMC(y = data$taxon, cell = NULL, C = nbhd, town = data$town,
   S = S, thin = thin, resumeRun = resumeRun, hyperpar = c(-0.5, 0),
   nbhdStructure = nbhdStructure,
   areallyAggregated = TRUE, outputNcdfName = latentNcdfName, taxa = taxa,
-  numCores = numCoresToUse, runID = runID, dataDir = dataDir,
+  runID = runID, dataDir = dataDir,
   outputDir = outputDir)
 
 

@@ -1,4 +1,4 @@
-source('code/mcmcAuxil.R')
+source(file.path(codeDir, "mcmcAuxil.R"))
 
 require(spam)
 
@@ -86,7 +86,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
     sigma2_current <- sigma2_next <- runif(P, 0.1, 2)
     cnt <- table(y)
     # have less common taxa start with larger sigma2
-    sigma2_current[cnt < 2000] <- sigma2_next[cnt < 2000] <- runif(P, 0.5, 2)
+    sigma2_current[cnt < 2000] <- sigma2_next[cnt < 2000] <- runif(sum(cnt < 2000), 0.5, 2)
     
     if(!nbhdStructure %in% c('bin', 'tps')) {
       mu_current <- mu_next <- runif(P, -2, 2)
@@ -462,8 +462,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
 
 drawProportions <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, numInputSamples, secondThin = 1, I, taxa){
   require(doParallel)
-  require(foreach)
-  registerDoParallel(4)
+  registerDoParallel(numCoresForProps)
 
   samples <- seq(1, numInputSamples, by = secondThin)
   P <- length(taxa)
@@ -489,33 +488,6 @@ drawProportions <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, n
   
   for(p in 1:P) 
     ncvar_put(outputNcdfPtr, taxa[p], phat[ , p, ], start = c(1, 1, 1), count = c(-1, -1, -1))
-  
-  invisible(NULL)
-}
-
-drawProportions_mp <- function(latentNcdfPtr, outputNcdfPtr, numMCsamples = 1000, numInputSamples, secondThin = 1, I, taxa){
-  require(RhpcBLASctl)
-  omp_set_num_threads(4)
-  
-  samples <- seq(1, numInputSamples, by = secondThin)
-  P <- length(taxa)
-
-  tmp <- matrix(0, I, P)
-  
-  for(s in seq_along(samples)) {
-    print(c(s, date()))
-    if(s==3) omp_set_num_threads(1)
-    for(p in 1:P) 
-      tmp[ , p] <- ncvar_get(latentNcdfPtr, varid = taxa[p], start = c(1, 1, samples[s]), count = c(-1, -1, 1))
-    
-    phat <- compute_cell_probabilities_cpp(tmp, numMCsamples, I, P)
-
-    for(p in 1:P) 
-      ncvar_put(outputNcdfPtr, taxa[p], phat[ , p], start = c(1, 1, s), count = c(-1, -1, 1))
-
-    if(s%%10 == 0)
-      cat("Finished sampling probabilities for (thinned) MCMC sample number ", samples[s], " at ", date(), ".\n", sep = "")
-  }
   
   invisible(NULL)
 }

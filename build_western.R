@@ -94,7 +94,7 @@ taxaUse <- names(data)
 
 taxa <- data.frame(taxonID = 1:nTaxa, taxonName = taxaUse, stringsAsFactors = FALSE)
 
-cat("Using the following", nTaxa, "taxa, with", sum(data), "trees, of which", round(100*sum(data$"Other hardwood")/sum(data), 2), "% are in the 'other' category:")
+cat("Using the following", nTaxa, "taxa, with", sum(data), "trees (of which", round(100*sum(data$"Other hardwood")/sum(data), 2), "% are in the 'Other hardwood' category) :")
 cat(taxaUse, sep = ",")
 cat("\n")
 
@@ -203,4 +203,4 @@ if(cv) {
 
 
 
-save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, paste0('data_western', runID, '.Rda')))
+save(holdOutCells, treeHoldOut, dataFull, nbhd, nbhdIndices, m1, m2, nTaxa, nCells, data, coord, taxa, file = file.path(dataDir, paste0('data_western_', runID, '.Rda')))

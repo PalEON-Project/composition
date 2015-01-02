@@ -1,6 +1,8 @@
 #!/usr/bin/Rscript
 source("config")
 
+runID <- paste0("eastern_", runID)
+
 source(file.path(codeDir, "graph.R"))
 
 ########################################################################
@@ -9,7 +11,6 @@ source(file.path(codeDir, "graph.R"))
 
 
 load(file.path(dataDir, paste0('intersection_', runID, '.Rda')))
-# reads in 'inter'
 
 maxPossibleCells <- 70
 townCellOverlap <- matrix(0, nTowns, maxPossibleCells)
@@ -61,7 +62,7 @@ fn <- file.path(dataDir, easternDataDir, paste0(easternVersionID, 'polygonsver',
 data1 <- read.csv(fn)
 # this next bit deals with fact that R puts periods for spaces and /
 names(data1) <- scan(pipe(paste0("head -n 1 ", fn)), sep = ',', what = 'character')
-data1 <- data1[order(data1$ID), 6:ncol(data1)]
+data1 <- data1[order(data1$ID), 8:ncol(data1)]
 
 cat(paste0("Read ", nrow(data1), " rows from ", fn, ", with field names: "))
 cat(names(data1), sep = ',')
@@ -167,4 +168,4 @@ taxon <- rep(rep(1:nTaxa, nTowns), times = tmp)
 
 data <- data.frame(taxon = taxon, town = town)
 
-save(data, townCellOverlap, townCellIds, taxa, nbhd, m1, m2, nTaxa, nTowns, file = file.path(dataDir, paste0('data_eastern_', runID, '.Rda')))
+save(data, townCellOverlap, townCellIds, taxa, nbhd, m1, m2, nTaxa, nTowns, file = file.path(dataDir, paste0('data_', runID, '.Rda')))
