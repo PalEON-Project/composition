@@ -140,7 +140,6 @@ fi
 # fit Bayesian composition model to eastern data -----------------------
 ########################################################################
 
-export OMP_NUM_THREADS=${numCoresToUse} # this seems the sweet spot
 ./fit_eastern.R >& log.fit_eastern_${runID} &
 # this creates 'PLScomposition_eastern_${runID}_full.nc'
 
