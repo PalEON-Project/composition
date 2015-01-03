@@ -296,6 +296,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       alpha_current  <- alpha_next
 
     } else {  # nbhdStructure == 'bin' or == 'tps'
+      browser()
       for(p in 1:P){
 
         sigma2_next[p] <- exp(rnorm(1, log(sigma2_current[p]), logSigma2_propSD[p]))
@@ -338,7 +339,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           alpha_next[,p] <- alpha_current[,p]
         }
       }
-      
+      print(numAcceptSigma2)
       sigma2_current <- sigma2_next
       alpha_current  <- alpha_next
     }
