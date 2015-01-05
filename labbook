@@ -136,3 +136,7 @@ I'm cleaning up files in the repository and putting log and config files for the
 also including packrat for pkg version control
 
 version 0.3-0 will be the core data product run, while 0.3-{1,2,...} will be the CV runs
+
+1/4/15:
+
+found bug in code/mcmc.R that pertains only to eastern fitting - wasn't updating U[[p]] to reflect new 'n' values

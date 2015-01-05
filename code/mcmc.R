@@ -296,7 +296,6 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       alpha_current  <- alpha_next
 
     } else {  # nbhdStructure == 'bin' or == 'tps'
-      browser()
       for(p in 1:P){
 
         sigma2_next[p] <- exp(rnorm(1, log(sigma2_current[p]), logSigma2_propSD[p]))
@@ -387,6 +386,25 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
         cellInd[[p]]  <- cell[treeInd[[p]]]
         cellNonInd[[p]] <- cell[treeNonInd[[p]]]
       }
+
+      # update U[[p]] to reflect new 'n'
+       if(!nbhdStructure %in% c('bin', 'tps')) {
+         for(p in seq_len(P)) {
+           B <- Vinv[[p]]
+           diag(B) <- diag(B) + n
+           if(!is.spam(B)) warning("B is not spam")
+           U[[p]] <- chol(B)  
+         }
+         UcProp <- chol(B)
+       } else {
+         for(p in seq_len(P)) {
+           B <- Vinv <- C / sigma2_current[p]
+           diag(B) <- diag(B) + n
+           if(!is.spam(B)) warning("B is not spam")
+           U[[p]] <- chol(B)  
+         }
+       }
+      
     }
 
     if (s%%thin==0){
