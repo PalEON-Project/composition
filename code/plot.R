@@ -1,3 +1,6 @@
+require(reshape2)
+require(grid)
+
 add_map_albers <- function(plot_obj, map_data = usShp, dat){
   p <- plot_obj + geom_path(data = map_data, aes(x = long, y = lat, group = group), size = 0.1) +
     scale_x_continuous(limits = c(min(dat$X, na.rm = TRUE), max(dat$X, na.rm = TRUE))) +

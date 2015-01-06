@@ -137,6 +137,12 @@ Version: 0.8-16
 Hash: 4e3d03fb47a1f57c7344928cbc8769d9
 Requires: sp
 
+Package: rgeos
+Source: CRAN
+Version: 0.3-8
+Hash: ab575b135d32a389ff23c6d364a5bae0
+Requires: sp
+
 Package: scales
 Source: CRAN
 Version: 0.2.4

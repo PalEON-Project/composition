@@ -175,12 +175,9 @@ fi
 
 # download us_alb.zip, water tiff, domain tiff from Wiki
 # http://144.92.235.115/dokuwiki/doku.php/public_data%3Brasters
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bus_alb.zip" -O tmp_alb.zip
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bwater_pct_albv0.1.tif" -O tmp_water.tif
-wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bdomain%3Bpaleon_full_alb_v0.1.tif" -O tmp_domain.tif
-
-cp tmp_domain.tif $dataDir/paleonDomain.tif
-cp tmp_water.tif $dataDir/water.tif
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bus_alb.zip" -O $dataDir/tmp_alb.zip
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bwater_pct_albv0.1.tif" -O $dataDir/water.tif 
+wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Bdomain%3Bpaleon_full_alb_v0.1.tif" -O $dataDir/paleonDomain.tif
 
 cd $dataDir
 unzip tmp_alb.zip

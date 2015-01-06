@@ -31,11 +31,6 @@ water = t(as.matrix(raster(file.path(dataDir, 'water.tif'))))[westernDomainX, we
 
 mask = is.na(region)
 
-if(!exists('uniqueRunID'))
-  uniqueRunID <- ""
-if(uniqueRunID == "")
-  fnAdd <- "" else fnAdd <- paste0("-", uniqueRunID)
-
 load(file.path(dataDir, paste0('data_', runID, '.Rda')))
 
 raw <- matrix(0, nrow = nCells, ncol = nTaxa)

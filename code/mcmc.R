@@ -338,7 +338,6 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
           alpha_next[,p] <- alpha_current[,p]
         }
       }
-      print(numAcceptSigma2)
       sigma2_current <- sigma2_next
       alpha_current  <- alpha_next
     }

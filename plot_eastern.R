@@ -37,7 +37,7 @@ maskWater = is.na(water)
 #waterE = paleon.water[easternDomainX, sort(180-easternDomainY)]
 #regE = paleon.reg[easternDomainX, sort(180- easternDomainY)]
 
-load(file.path(dataDir, paste0('data_', runID, fnAdd, '.Rda')))
+load(file.path(dataDir, paste0('data_', runID, '.Rda')))
 
 load(file.path(dataDir, paste0('intersection_', runID, '.Rda')))
 
