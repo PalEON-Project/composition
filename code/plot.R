@@ -35,7 +35,8 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
 
     col <- col(length(breaks)-1)
     if(reverse_colors) col <- rev(col)
-    d <- ggplot() + geom_raster(data = taxon_dat_long, aes(x = X, y = Y, fill = factor(value))) + coord_fixed() + scale_fill_manual(labels = breaklabels, name = legendName, drop = FALSE, values = col, guide = legend) + theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16))
+    if(legend) guide <- "legend" else guide <- "none"
+    d <- ggplot() + geom_raster(data = taxon_dat_long, aes(x = X, y = Y, fill = factor(value))) + coord_fixed() + scale_fill_manual(labels = breaklabels, name = legendName, drop = FALSE, values = col, guide = guide) + theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16))
     d <- add_map_albers(plot_obj = d, map_data = map_data, dat = taxon_dat_long)
     if(facet) {
       d <- d + facet_wrap(~variable, ncol = ncol)
