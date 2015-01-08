@@ -98,8 +98,8 @@ dev.off()
 # it would be nice to have this as a function, but there is a lot of pre-processing...
 
 nTowns <- dim(townCellOverlap)[1]
-easternDataDir <- paste0(easternVersionID, '.', easternVersion)
-ohioDataDir <- paste0(ohioVersionID, '.', ohioVersion)
+easternDataDir <- "eastern"
+ohioDataDir <- "ohio"
 eastern_townships <- readOGR(file.path(dataDir, easternDataDir), paste0(easternVersionID, 'polygonsver', easternVersion))
 ohio_townships <- readOGR(file.path(dataDir, ohioDataDir), paste0('OH', ohioVersionID, 'polygonsver', ohioVersion))
 ohio_townships <- spTransform(ohio_townships, CRSobj=CRS('+init=epsg:3175'))  # transform to Albers
@@ -118,13 +118,17 @@ for(p in seq_len(nTaxa))
 east_fort <- fortify(eastern_townships)
 ohio_fort <- fortify(ohio_townships)
 
-idMap = c(eastern_townships@data$ID, ohio_townships@data$ID + 1 + length(eastern_townships))
-# this is dangerous as it relies on data$town corresponding to $id+1 values where $id is from the @polygons 
-east_fort$id = as.numeric(east_fort$id) + 1
-ohio_fort$id = as.numeric(ohio_fort$id) + 1 + length(eastern_townships)
+east_idMap <- data.frame(id = sort(eastern_townships@data$ID), town = seq_along(eastern_townships))
+ohio_idMap <- data.frame(id = sort(ohio_townships@data$ID), town = length(eastern_townships) + seq_along(ohio_townships))
+
+east_fort <- merge(east_fort, east_idMap, by.x = 'id', by.y = 'id', all.x = TRUE, all.y = FALSE)
+east_fort <- east_fort[order(as.numeric(east_fort$id), east_fort$order), ]
+
+ohio_fort <- merge(ohio_fort, ohio_idMap, by.x = 'id', by.y = 'id', all.x = TRUE, all.y = FALSE)
+ohio_fort <- ohio_fort[order(as.numeric(ohio_fort$id), ohio_fort$order), ]
+
 fort <- rbind(east_fort, ohio_fort)
-fort$id = idMap[fort$id]
-fort <- cbind(fort, raw[fort$id,])
+fort <- cbind(fort, raw[fort$town,])
 names(fort)[1:2] <- c('X', 'Y')
 
 #ggplot(fort, aes(long, lat, group = id)) + geom_polygon(aes(fill = Oak))
@@ -138,7 +142,7 @@ breaklabels <- apply(cbind(breaks[1:(length(breaks)-1)], breaks[2:length(breaks)
 
 legendName = "raw proportions"
 
-d <- ggplot(taxon_dat_long, aes(X, Y, group = id)) +
+d <- ggplot(taxon_dat_long, aes(X, Y, group = town)) +
   geom_polygon(aes(fill = as.factor(value))) + 
   scale_fill_manual(values = tim.colors(length(breaks)), labels = breaklabels, name = legendName) +
   theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16)) +
