@@ -144,7 +144,7 @@ legendName = "raw proportions"
 
 d <- ggplot(taxon_dat_long, aes(X, Y, group = town)) +
   geom_polygon(aes(fill = as.factor(value))) + 
-  scale_fill_manual(values = tim.colors(length(breaks)), labels = breaklabels, name = legendName) +
+  scale_fill_manual(values = rev(terrain.colors(length(breaks))), labels = breaklabels, name = legendName) +
   theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16)) +
   coord_fixed() +
   facet_wrap( ~ variable, ncol=5)
