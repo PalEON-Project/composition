@@ -3,6 +3,8 @@
 # both the western PLS data and the eastern township data
 # note that these steps are intended for use on UNIX-like machines and will need to be modified for Windows (and possibly for Mac OS X)
 
+# this is not intended to be run as a full script as later components depend on earlier ones having finished; rather it is intended to allow one to run all of the steps of the model fitting/analysis
+
 # this code is being run under R 3.1.2 and with package versioning controlled by packrat
 # restore any packages that are not installed on the system
 Rscript -e "require(packrat); packrat::restore()"
@@ -109,15 +111,15 @@ if [ ! -e eastern ]; then
     mkdir eastern
 fi
 
-if [ ! -e oh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip ]; then
-    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Boh${ohioVersionID}centroid_polygonsver${ohioVersion}.zip" -O ohio/ohio.zip
+if [ ! -e oh${ohioVersionID}polygons_v${ohioVersion}.zip ]; then
+    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Boh${ohioVersionID}polygons_v${ohioVersion}.zip" -O ohio/ohio.zip
     cd ohio
     unzip ohio.zip
     cd ..
 fi
 
 if [ ! -e ${easternVersionID}polygonsver${easternVersion}.zip ]; then
-    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3B${easternVersionID}polygonsver${easternVersion}.zip" -O eastern/eastern.zip
+    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3B${easternVersionID}polygons_v${easternVersion}.zip" -O eastern/eastern.zip
     cd eastern
     unzip eastern.zip
 fi

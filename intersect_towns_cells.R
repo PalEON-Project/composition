@@ -17,8 +17,8 @@ ohioDataDir <- "ohio"
 # read in shape file info and create raster for PalEON Albers grid
 ####################################################################
 
-eastern_townships <- readOGR(file.path(dataDir, easternDataDir), paste0(easternVersionID, 'polygonsver', easternVersion))
-ohio_townships <- readOGR(file.path(dataDir, ohioDataDir), paste0('OH', ohioVersionID, 'polygonsver', ohioVersion))
+eastern_townships <- readOGR(file.path(dataDir, easternDataDir), paste0(easternVersionID, 'polygons_v', easternVersion))
+ohio_townships <- readOGR(file.path(dataDir, ohioDataDir), paste0('OH', ohioVersionID, 'polygons_v', ohioVersion))
 
 #proj4string(ohio_townships) <- CRS('+init=epsg:4326')  # seems to have a lat/lon proj now, so don't need this
 ohio_townships <- spTransform(ohio_townships, CRSobj=CRS('+init=epsg:3175'))  # transform to Albers
