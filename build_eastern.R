@@ -58,7 +58,7 @@ nbhd <- graphRead(fns[1], fns[2], m1, m2, type = nbhdStructure, dir = dataDir)
 easternDataDir <- "eastern"
 ohioDataDir <- "ohio"
 
-fn <- file.path(dataDir, easternDataDir, paste0(easternVersionID, 'polygonsver', easternVersion, '.csv'))
+fn <- file.path(dataDir, easternDataDir, paste0(easternVersionID, 'polygons_v', easternVersion, '.csv'))
 data1 <- read.csv(fn)
 # this next bit deals with fact that R puts periods for spaces and /
 names(data1) <- scan(pipe(paste0("head -n 1 ", fn)), sep = ',', what = 'character')
@@ -68,7 +68,7 @@ cat(paste0("Read ", nrow(data1), " rows from ", fn, ", with field names: "))
 cat(names(data1), sep = ',')
 cat("\n")
 
-fn <- file.path(dataDir, ohioDataDir, paste0("OH", ohioVersionID, "polygonsver", ohioVersion, ".csv"))
+fn <- file.path(dataDir, ohioDataDir, paste0("OH", ohioVersionID, "polygons_v", ohioVersion, ".csv"))
 data2 <- read.csv(fn)
 names(data2) <- scan(pipe(paste0("head -n 1 ", fn)), sep = ',', what = 'character')
 data2 <- data2[order(data2$ID), 10:ncol(data2)]
