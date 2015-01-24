@@ -109,6 +109,8 @@ calc_cv_western.R now saves results info in form of arrays in *-cvResults.Rda
 12/7/14:
 I reported to Simon that initial v0.4 of gridded western has a lot more tamarack and spruce than before, counts in some (many?) MN and WI cells that differ a bit from v 0.3 and is missing fir in east (in MI)
 
+*** upshot is that 0.3 and 0.3-1 western datasets were messed up so version 0.2 composition product in west is messed up ***
+
 12/9/14:
 the white spots for oak in SE MN seem real based on plotting %age no.tree - there is a N-S band there with very high % no.tree
 also biomass estimates show 0 biomass in that area as well
@@ -140,3 +142,7 @@ version 0.3-0 will be the core data product run, while 0.3-{1,2,...} will be the
 1/4/15:
 
 found bug in code/mcmc.R that pertains only to eastern fitting - wasn't updating U[[p]] to reflect new 'n' values
+
+1/23/15:
+
+running 0.3 and 0.3-1 for eastern where 0.3-1 has separate alpha and sigma2 updates because initial eastern run seems to show worse sigma2 mixing than for version 0.2

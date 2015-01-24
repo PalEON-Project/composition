@@ -10,7 +10,7 @@ source(file.path(codeDir, "graph.R"))
 ########################################################################
 
 
-load(file.path(dataDir, paste0('intersection_', runID, '.Rda')))
+load(file.path(dataDir, paste0('intersection_eastern_', productVersion, '.Rda')))
 
 maxPossibleCells <- 70
 townCellOverlap <- matrix(0, nTowns, maxPossibleCells)

@@ -295,83 +295,93 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       sigma2_current <- sigma2_next
       alpha_current  <- alpha_next
 
-    } else {  # nbhdStructure == 'bin' or == 'tps'
+  } else {  # nbhdStructure == 'bin' or == 'tps'
       for(p in 1:P){
-
-        sigma2_next[p] <- exp(rnorm(1, log(sigma2_current[p]), logSigma2_propSD[p]))
-        if(sigma2_next[p] < 0) {
-          accept <- FALSE 
-        } else {
           
+          sigma2_next[p] <- exp(rnorm(1, log(sigma2_current[p]), logSigma2_propSD[p]))
+          if(sigma2_next[p] < 0) {
+              accept <- FALSE 
+          } else {
+              
                                         # terms for reverse proposal
-          denominator <- -(I-dfAdj)*log(sigma2_current[p])/2 - sum(log(diag(U[[p]]))) + 0.5*log(sigma2_current[p])
-          UtWi <- forwardsolve(U[[p]], Wi.pbar[ , p] * n)
-          denominator <- denominator + 0.5*sum(UtWi^2)
-          
+              denominator <- -(I-dfAdj)*log(sigma2_current[p])/2 - sum(log(diag(U[[p]]))) + 0.5*log(sigma2_current[p])
+              UtWi <- forwardsolve(U[[p]], Wi.pbar[ , p] * n)
+              denominator <- denominator + 0.5*sum(UtWi^2)
+              
                                         # terms for forward proposal
-          Vinv <- C / sigma2_next[p]
-          B <- Vinv
-          diag(B) <- diag(B) + n
-          
-          Uprop <- update.spam.chol.NgPeyton(Uprop, B)
-          
-          numerator <- -(I-dfAdj)*log(sigma2_next[p])/2 - sum(log(diag(Uprop))) + 0.5*log(sigma2_next[p])
-          UtWi <- forwardsolve(Uprop, Wi.pbar[ , p] * n)
-          numerator <- numerator + 0.5*sum(UtWi^2)
-          
-          accept <- decide(numerator - denominator)
-        }
-        if(accept) {
-          numAcceptSigma2[p] <- numAcceptSigma2[p] + 1
+              Vinv <- C / sigma2_next[p]
+              B <- Vinv
+              diag(B) <- diag(B) + n
+              
+              Uprop <- update.spam.chol.NgPeyton(Uprop, B)
+              
+              numerator <- -(I-dfAdj)*log(sigma2_next[p])/2 - sum(log(diag(Uprop))) + 0.5*log(sigma2_next[p])
+              UtWi <- forwardsolve(Uprop, Wi.pbar[ , p] * n)
+              numerator <- numerator + 0.5*sum(UtWi^2)
+              
+              accept <- decide(numerator - denominator)
+          }
+          if(accept) {
+              numAcceptSigma2[p] <- numAcceptSigma2[p] + 1
                                         # sample alphas
-          means <- backsolve(Uprop, UtWi)
-          alpha_next[,p] <- means + backsolve(Uprop, rnorm(I))
-          U[[p]] <- Uprop
+              means <- backsolve(Uprop, UtWi)
+              alpha_next[,p] <- means + backsolve(Uprop, rnorm(I))
+              U[[p]] <- Uprop
           # with update to spam 1.0.1 these steps not needed
           #U[[p]]@entries <- Uprop@entries
           #U[[p]]@entries[1] <- U[[p]]@entries[1] # force copy
                                         # since .Fortran in update.spam in 0.41-0 does not do a copy
                                         # and R 3.1 doesn't recognize that a copy needs to be made
                                         # only reason 3.0 does do copy is because it's in a list...!
-        } else {
-          sigma2_next[p] <- sigma2_current[p]
-          alpha_next[,p] <- alpha_current[,p]
-        }
+          } else {
+              sigma2_next[p] <- sigma2_current[p]
+              alpha_next[,p] <- alpha_current[,p]
+          }
       }
       sigma2_current <- sigma2_next
       alpha_current  <- alpha_next
-    }
-    
+      
                                         # alpha and sigma2 non-joint samples
-    if(FALSE) {
+      if(TRUE) {
                                         # for the moment don't include the non-joint sample as well so that alphas can move on their own; this adds about a second per iteration
-      for(p in 1:P){
-        if(nbhdStructure != 'bin') {
-          means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv[[p]])))
-        } else {
-          Vinv <- C / sigma2_current[p]
-          means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n))
-        }
-        alpha_next[,p] <- means + backsolve(U[[p]], rnorm(I))
-
-        if(!nbhdStructure %in% c('bin', 'tps')) {
-          ss <- sigma2_current[p] * t(alpha_next[,p] - mu_current[p]) %*% (Vinv[[p]] %*% (alpha_next[,p] - mu_current[p]))
-          sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I)/2, scale = 1/(.5*ss + hyperpar[2])) 
+          for(p in 1:P){
+              if(nbhdStructure != 'bin') {
+                  means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv[[p]])))
+              } else {
+                  Vinv <- C / sigma2_current[p]
+                  means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n))
+              }
+              alpha_next[,p] <- means + backsolve(U[[p]], rnorm(I))
+              
+              if(!nbhdStructure %in% c('bin', 'tps')) {
+                  ss <- sigma2_current[p] * t(alpha_next[,p] - mu_current[p]) %*% (Vinv[[p]] %*% (alpha_next[,p] - mu_current[p]))
+                  sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I)/2, scale = 1/(.5*ss + hyperpar[2])) 
                                         # need I-1 because of the zero eigenvalue in the precision matrix (but not for Lindgren)
-        } else {
-          ss <- sigma2_current[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
-          sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I-dfAdj)/2, scale = 1/(.5*ss + hyperpar[2])) 
+              } else {
+                  ss <- sigma2_current[p] * t(alpha_next[,p]) %*% (Vinv %*% alpha_next[,p])
+                  sigma2_next[p] <- 1 / rgamma(1, shape = hyperpar[1] + (I-dfAdj)/2, scale = 1/(.5*ss + hyperpar[2])) 
                                         # need I-1 because of the zero eigenvalue in the precision matrix
-        }
-          
-        if(is.na(sigma2_next[p])) { # sigma2 too small
-          sigma2_next[p] <- sigma2_current[p]
-          alpha_next[,p] <- alpha_current[,p]
-        }
+              }
+              
+              if(is.na(sigma2_next[p])) { # sigma2 too small
+                  sigma2_next[p] <- sigma2_current[p]
+                  alpha_next[,p] <- alpha_current[,p]
+              }
+          }
+          sigma2_current <- sigma2_next
+          alpha_current  <- alpha_next
+
+          if(!areallyAggregated) {
+          # update U[[p]] to reflect new sigma2 (if aggregated this will be done below)
+              for(p in seq_len(P)) {
+                  B <- Vinv <- C / sigma2_current[p]
+                  diag(B) <- diag(B) + n
+                  if(!is.spam(B)) warning("B is not spam")
+                  U[[p]] <- chol(B)  
+              }
+          }
       }
-      sigma2_current <- sigma2_next
-      alpha_current  <- alpha_next
-    }
+  }
   
     # sample cell indices
     if(areallyAggregated) {
