@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 
-# assumes inputs in westernData.Rda
+# assumes inputs in data_western_${version}.Rda
 
 source("config")
 

@@ -71,7 +71,7 @@ cat("\n")
 fn <- file.path(dataDir, ohioDataDir, paste0("OH", ohioVersionID, "polygons_v", ohioVersion, ".csv"))
 data2 <- read.csv(fn)
 names(data2) <- scan(pipe(paste0("head -n 1 ", fn)), sep = ',', what = 'character')
-data2 <- data2[order(data2$ID), 10:ncol(data2)]
+data2 <- data2[order(data2$ID), 8:ncol(data2)]
 
 cat(paste0("Read ", nrow(data2), " rows from ", fn, ", with field names: "))
 cat(names(data2), sep = ',')
