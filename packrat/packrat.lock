@@ -22,6 +22,11 @@ Source: CRAN
 Version: 0.14-72
 Hash: a1cd799bd4dc3e532ebd24b11a7fa55a
 
+Package: coda
+Source: CRAN
+Version: 0.16-1
+Hash: 8bdc942ab0d8cba20f6ed4b870569ef4
+
 Package: colorspace
 Source: CRAN
 Version: 1.2-4

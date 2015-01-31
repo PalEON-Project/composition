@@ -146,3 +146,5 @@ found bug in code/mcmc.R that pertains only to eastern fitting - wasn't updating
 1/23/15:
 
 running 0.3 and 0.3-1 for eastern where 0.3-1 has separate alpha and sigma2 updates because initial eastern run seems to show worse sigma2 mixing than for version 0.2
+
+having separate alpha nad sigma2 definitely seems to help and almost gives as good results as 0.2 runs back in spring 2014; still not sure why it might nto be quite as good
