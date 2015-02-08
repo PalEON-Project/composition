@@ -1,0 +1,14 @@
+Unloading packages in user library:
+- SCF
+Loading required package: Rcpp
+Error in .RcppClass@generator$methods : 
+  could not find function "loadMethod"
+Error : unable to load R code in package ‘Rcpp’
+Loading required package: inline
+Error in eval(expr, envir, enclos) : 
+  could not find function "cppFunction"
+Calls: source ... eval -> eval -> source -> withVisible -> eval -> eval
+In addition: Warning message:
+In library(package, lib.loc = lib.loc, character.only = TRUE, logical.return = TRUE,  :
+  there is no package called ‘inline’
+Execution halted

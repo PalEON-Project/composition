@@ -1,0 +1,53 @@
+Unloading packages in user library:
+- SCF
+Using overall Albers grid with grid spacing of 8000, x range of (-71000 2297000) and y range of (58000 1498000).
+[1] "check that eastern domain with buffer is ok"
+Loading required package: spam
+Loading required package: methods
+Loading required package: grid
+Spam version 1.0-1 (2014-09-09) is loaded.
+Type 'help( Spam)' or 'demo( spam)' for a short introduction 
+and overview of this package.
+Help for individual functions is also obtained by adding the
+suffix '.spam' to the function name, e.g. 'help( chol.spam)'.
+
+Attaching package: ‘spam’
+
+The following objects are masked from ‘package:base’:
+
+    backsolve, forwardsolve
+
+Read 150561 items
+[1] 1000
+[1] 2000
+[1] 3000
+[1] 4000
+[1] 5000
+[1] 6000
+[1] 7000
+[1] 8000
+[1] 9000
+[1] 10000
+[1] 11000
+[1] 12000
+[1] 13000
+[1] 14000
+[1] 15000
+[1] 16000
+[1] 17000
+[1] 18000
+[1] 19000
+[1] 20000
+[1] 21000
+[1] 22000
+[1] 23000
+[1] 24000
+[1] 25000
+Read 32 items
+Read 1372 rows from /var/tmp/paciorek/paleon/comp/data/eastern/1372polygons_v0.9-1.csv, with field names: Ash,Atlantic white cedar,Basswood,Beech,Birch,Black gum/sweet gum,Cedar/juniper,Cherry,Chestnut,Dogwood,Elm,Fir,Hemlock,Hickory,Ironwood,Maple,Oak,Other hardwood,Pine,Poplar,Tulip poplar,Spruce,Sycamore,Tamarack,Walnut
+Read 31 items
+Read 471 rows from /var/tmp/paciorek/paleon/comp/data/ohio/OH471polygons_v0.2-1.csv, with field names: Ash,Basswood,Beech,Birch,Black gum/sweet gum,Buckeye,Cedar/juniper,Cherry,Chestnut,Dogwood,Elm,Hackberry,Hemlock,Hickory,Ironwood,Maple,Mulberry,Oak,Other hardwood,Pine,Poplar,Poplar/tulip poplar,Sycamore,Walnut
+Grouping the following taxa into an 'Other hardwood' category:Alder,Buckeye,Hackberry,Locust,Mulberry,Other hardwood,Sycamore,Unknown tree,Willow
+Grouping  Poplar  into  Poplar/tulip poplar .
+Grouping  Tulip poplar  into  Poplar/tulip poplar .
+Using the following 23 taxa, with 421496 trees, of which 1.43 % are in the 'other' category:Ash,Atlantic white cedar,Basswood,Beech,Birch,Black gum/sweet gum,Cedar/juniper,Cherry,Chestnut,Dogwood,Elm,Fir,Hemlock,Hickory,Ironwood,Maple,Oak,Pine,Poplar/tulip poplar,Spruce,Tamarack,Walnut,Other hardwood
