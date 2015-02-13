@@ -137,7 +137,7 @@ I'm cleaning up files in the repository and putting log and config files for the
 
 also including packrat for pkg version control
 
-version 0.3-0 will be the core data product run, while 0.3-{1,2,...} will be the CV runs
+version 0.3-0 will be the core data product run, while 0.3-{1,2,...} will be the CV runs (actually I'm changing this up - see below)
 
 1/4/15:
 
@@ -148,3 +148,25 @@ found bug in code/mcmc.R that pertains only to eastern fitting - wasn't updating
 running 0.3 and 0.3-1 for eastern where 0.3-1 has separate alpha and sigma2 updates because initial eastern run seems to show worse sigma2 mixing than for version 0.2
 
 having separate alpha nad sigma2 definitely seems to help and almost gives as good results as 0.2 runs back in spring 2014; still not sure why it might nto be quite as good
+
+2/8/15:
+old 0.3 runs (-10,-11, etc.) were based on incorrect data inputs
+
+Simon fixed for western 0.4-3, but still issues with water/no.tree that don't affect composition
+
+east runs (0.3 and 0.3-1) suggest it's worth using 0.3-1 and that burnin should be 1-50, keeping 51-300
+same for west, though for gum and dogwood, burnin not quite complete at 51, but keeping at that for consistency even for them
+mixing of preds in east and west seems good, even for gum/dogwood in west
+
+going ahead with use of 0.4-3 for now but check later that input data would be same once he fixed datasets
+
+new CV runs will be:
+95% holdout:
+bin (-101), lindgren (-102), tps (-103)
+80% holdout
+bin (-104), lindgren (-105), tps (-106)
+
+
+at the moment the PLScomposition_{western,eastern}_0.3.nc final files are generated from PLScomposition_{western,eastern}_0.3-1_full.nc
+
+in various files should probably change 0.3-1 to 0.3 and vice versa
