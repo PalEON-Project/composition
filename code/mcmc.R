@@ -345,7 +345,7 @@ runMCMC <-function(y, cell = NULL, C, Cindices = NULL, town = NULL, townCellOver
       if(TRUE) {
                                         # for the moment don't include the non-joint sample as well so that alphas can move on their own; this adds about a second per iteration
           for(p in 1:P){
-              if(nbhdStructure != 'bin') {
+              if(nbhdStructure != c('bin', 'tps')) {
                   means <- backsolve(U[[p]], forwardsolve(U[[p]], Wi.pbar[ , p] * n + mu_current[p]*rowSums(Vinv[[p]])))
               } else {
                   Vinv <- C / sigma2_current[p]

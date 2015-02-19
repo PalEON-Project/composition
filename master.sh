@@ -85,7 +85,7 @@ cd $projectDir
 
 # cp config_{version}-{runID} config
 
-if [ ! -e data_western_${runID}.Rda ]; then
+if [ ! -e $dataDir/data_western_${runID}.Rda ]; then
     ./build_western.R >& log.build_western_${runID} &
 # this creates 'data_western_${runID}.Rda'
 fi
@@ -130,7 +130,7 @@ cd $projectDir
 # preprocess eastern township data -------------------------------------
 ########################################################################
 
-if [ ! -e data_eastern_${runID}.Rda ]; then
+if [ ! -e $dataDir/data_eastern_${runID}.Rda ]; then
     ./intersect_towns_cells.R  >& log.intersect_towns_cells 
 # creates intersection_${runID}.Rda
 

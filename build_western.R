@@ -58,6 +58,7 @@ otherNames <- unique(names(data))[!(names(data) %in% taxaInfo[["Level.3a"]])]
 if(length(otherNames)) {
   cat("Warning: Found these additional taxa categories, ignoring them:")
   cat(otherNames, sep = ',')
+  cat("\n")
 }
 
 cat("Grouping the following taxa into an 'Other hardwood' category:")
