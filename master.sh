@@ -10,6 +10,7 @@
 Rscript -e "require(packrat); packrat::restore()"
 
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
+# in general, it's good to create a version of config, say config_0.3-0, specific to each run and then copy that file to 'config'
 source config
 
 export OMP_NUM_THREADS=1
@@ -160,6 +161,12 @@ burnin=25000
 domain=western
 ./remove_burnin.R $burnin $domain
 # this creates 'PLScomposition_western_${runID}.nc'
+
+
+cp $outputDir/PLScomposition_western_${runID}.nc /server/web/share/paciorek/paleon/composition_midwest_v${productID}.nc
+cp $outputDir/PLScomposition_eastern_${runID}.nc /server/web/share/paciorek/paleon/composition_east_v${productID}.nc
+
+# create merged full domain version
 
 ########################################################################
 # do cross-validation -----------------------

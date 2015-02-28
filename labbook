@@ -175,9 +175,19 @@ in various files should probably change 0.3-1 to 0.3 and vice versa
 2/13/15:
 changed 0.3 runs to 0.3-2
 
-new 0.3-0 will be with updated western 0.5 that simon just fixed
+changing old eastern 0.3-1 to 0.3-0
+
+new 0.3-0 western will be with updated western 0.5 that simon just fixed
 also running 0.3-100 on old cluster as backup
 
 checked 0.5 western data (plot of presence of data and raw proportions and total counts and things look reasonable)
 
-0.3-101 is queued on slurm cluster
+0.3-{101-106} are cv runs
+
+2/28/15:
+
+0.3-0 are the final east and west runs
+0.3-2 are runs w/o separate alpha/sigma updates and for west are based on bad data
+0.3-1 western might be the run w/ separate updates but based on bad data
+
+I've renamed the 0.3-0 .nc files as {east,midwest}_composition_v0.3.nc for posting on wiki

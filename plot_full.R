@@ -73,7 +73,7 @@ psdWest <- apply(preds, c(1, 2), 'sd')
 # eastern data/results
 
 load(file.path(dataDir, paste0('data_eastern_', runID, '.Rda')))
-load(file.path(dataDir, paste0('intersection_eastern_', runID, '.Rda')))
+load(file.path(dataDir, paste0('intersection_eastern_', productVersion, '.Rda')))
 
   
 
