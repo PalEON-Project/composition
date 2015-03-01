@@ -24,9 +24,9 @@ usFortified <- fortify(usShp, region='id')
 ## get raw data in form to use
 ########################################################################################
 
-# don't I need rev(easternDomainY)?
-region = t(as.matrix(raster(file.path(dataDir, 'paleonDomain.tif'))))[easternDomainX, easternDomainY]
-water = t(as.matrix(raster(file.path(dataDir, 'water.tif'))))[easternDomainX, easternDomainY]
+# rev() flips tif N->S to match netCDF S->N
+region = t(as.matrix(raster(file.path(dataDir, 'paleonDomain.tif'))))[easternDomainX, rev(easternDomainY)]
+water = t(as.matrix(raster(file.path(dataDir, 'water.tif'))))[easternDomainX, rev(easternDomainY)]
 # t()  manipulates matrix so plots correctly W-E and N-S in R
 
 region[region %in% c(2,3,5,6,11,12)] <- NA
@@ -39,9 +39,9 @@ maskWater = is.na(water)
 
 load(file.path(dataDir, paste0('data_', runID, '.Rda')))
 
-load(file.path(dataDir, paste0('intersection_', runID, '.Rda')))
+load(file.path(dataDir, paste0('intersection_eastern_', productVersion, '.Rda')))
 
-coord <- expand.grid(X = xGrid[easternDomainX], Y = rev(yGrid)[easternDomainY])
+coord <- expand.grid(X = xGrid[easternDomainX], Y = yGrid[yRes+1-rev(easternDomainY)])
   
 
 finalNcdfName <- paste0('PLScomposition_', runID, '.nc')
@@ -154,20 +154,5 @@ d <- theme_clean(d)
 pdf(file.path(outputDir, paste0('PLScomposition_', runID, '_rawData.pdf')), height = figHgt, width = figWth)
 print(d)
 dev.off()
-
-
-
-
-######################################################################
-### mixing
-######################################################################
-
-
-if(FALSE) {
-  load(file.path(outputDir, paste0('sigma2_', runID, '.Rda')))
-  par(mfrow = c(5, 5), mai = c(.3, .3, .1, .1))
-  for(p in 1:ncol(sigma2store))
-    tsplot(sigma2store[ , p])
-}
 
 

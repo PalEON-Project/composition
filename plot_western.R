@@ -23,10 +23,10 @@ usFortified <- fortify(usShp, region='id')
 ## get raw data and model output in form to use
 ########################################################################################
 
-# don't I need rev(westernDomainY)?
-region = t(as.matrix(raster(file.path(dataDir, 'paleonDomain.tif'))))[westernDomainX, westernDomainY]
+# rev() flips tif N->S to match netCDF S->N
+region = t(as.matrix(raster(file.path(dataDir, 'paleonDomain.tif'))))[westernDomainX, rev(westernDomainY)]
 region[region == 9] <- NA # Ohio
-water = t(as.matrix(raster(file.path(dataDir, 'water.tif'))))[westernDomainX, westernDomainY]
+water = t(as.matrix(raster(file.path(dataDir, 'water.tif'))))[westernDomainX, rev(westernDomainY)]
 # t() manipulates matrix so plots correctly W-E and N-S in R
 
 mask = is.na(region)
@@ -44,7 +44,7 @@ total[total == 0] <- 1
 raw <- raw / total
 dimnames(raw)[[2]] <- gsub("/", "ZZZ", taxa$taxonName)  # otherwise both / and " " become "." so can't distinguish when I substitute back in for "."
 
-finalNcdfName <- paste0('composition_midwest_', runID, '.nc')
+finalNcdfName <- paste0('PLScomposition_', runID, '.nc')
 
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
@@ -68,6 +68,9 @@ psd <- apply(preds, c(1, 2), 'sd')
 pm[mask, ] <- NA
 psd[mask, ] <- NA
 raw[mask, ] <- NA
+
+# need to recreate this so y dim goes S->N
+coord <- expand.grid(X = xGrid[westernDomainX], Y = yGrid[westernDomainY])
 
 #########################################################################################
 ## make plots

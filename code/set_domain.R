@@ -39,7 +39,7 @@ easternLimitOfWesternDomain <- max(xGrid[westernDomainX])
 # use 117-296 for modeling OH and east
 # use 24:145 rows for PA and east
 # use 24:163 rows for OH and east
+# note that rows go from N->S at this stage of things
 
-print("check that eastern domain with buffer is ok")
 easternDomainX <- 117:xRes
 easternDomainY <- 24:(163 + 2*buffer)

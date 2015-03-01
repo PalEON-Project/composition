@@ -149,11 +149,11 @@ figWth = 22
 figHgtIndiv = 16*.5
 figWthIndiv = 22*.5
 
-pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_fits.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('composition_', runID, '_fits.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = pmFull, breaks = propBreaks, coords = coordFull, legendName = 'fitted proportions', map_data = usFortified, facet = TRUE)
 dev.off()
 
-pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_fits_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
+pdf(file.path(outputDir, paste0('composition_', runID, '_fits_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
 make_veg_map(data = pmFull, breaks = propBreaks, coords = coordFull, legendName = 'fitted proportions', map_data = usFortified, facet = FALSE)
 dev.off()
 
@@ -162,11 +162,11 @@ psdBreaks = c(0, 0.01, 0.03, 0.05, 0.075, 0.10, 0.15, 0.2, 0.25)
 #psd[psd > .3] = 0.3
 #psdBreaks = c(0, 0.01, 0.03, 0.05, 0.10, 0.15, 0.2, 0.25, 0.3)
   
-pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_uncertainty.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('composition_', runID, '_uncertainty.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = psdFull, breaks = psdBreaks, coords = coordFull, legendName = 'std. error', map_data = usFortified, col = heat.colors, facet = TRUE)
 dev.off()
 
-pdf(file.path(outputDir, paste0('PLScomposition_full_', runID, '_uncertainty_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
+pdf(file.path(outputDir, paste0('composition_full_', runID, '_uncertainty_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
 make_veg_map(data = psdFull, breaks = psdBreaks, coords = coordFull, legendName = 'std. error', map_data = usFortified, col = heat.colors, facet = FALSE)
 dev.off()
 
