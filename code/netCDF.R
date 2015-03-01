@@ -10,7 +10,7 @@ makeAlbersNetCDF <- function(name = NULL, units = '', longname = '', fn = NULL, 
   vars <- list()
   length(vars) == length(taxa)
   for(k in seq_along(taxa)) {
-    vars[[k]] <- ncvar_def(name = taxa[k], dim=list(x_dim, y_dim, draw_dim), units = units, missval=1e20, longname = paste0(longname, " for taxon ", taxa[k]), prec="double")
+    vars[[k]] <- ncvar_def(name = taxa[k], dim=list(x_dim, y_dim, draw_dim), units = units, longname = paste0(longname, " for taxon ", taxa[k]), prec="double")
   }
   ncdfPtr <- nc_create(file.path(dir, fn), vars)
   nc_close(ncdfPtr)

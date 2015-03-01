@@ -44,7 +44,7 @@ total[total == 0] <- 1
 raw <- raw / total
 dimnames(raw)[[2]] <- gsub("/", "ZZZ", taxa$taxonName)  # otherwise both / and " " become "." so can't distinguish when I substitute back in for "."
 
-finalNcdfName <- paste0('PLScomposition_', runID, '.nc')
+finalNcdfName <- paste0('composition_midwest_', runID, '.nc')
 
 ncdfPtr <- nc_open(file.path(outputDir, finalNcdfName))
 test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))

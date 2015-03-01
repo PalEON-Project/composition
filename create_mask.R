@@ -18,8 +18,8 @@ source(file.path(codeDir, 'set_domain.R'))
 
 # image.plot(1:296, 1:180, region[,180:1])
 
-x_dim <-  ncdim_def("x", "meters_east", xGrid)
-y_dim <-  ncdim_def("y", "meters_north", yGrid)
+x_dim <-  ncdim_def("x", "meters_east", xGrid, longname = 'x coordinate of grid cell centroid in Albers projection (Great Lakes St Lawrence Albers [Proj4 +init=epsg:3175])')
+y_dim <-  ncdim_def("y", "meters_north", yGrid, longname = 'y coordinate of grid cell centroid in Albers projection (Great Lakes St Lawrence Albers [Proj4 +init=epsg:3175])')
 vars <- list()
 vars[[1]] <- ncvar_def(name = 'water', dim = list(x_dim, y_dim),
                        units = 'unitless (proportion from 0 to 1)',

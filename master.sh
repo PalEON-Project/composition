@@ -97,6 +97,8 @@ fi
 
 ./fit_western.R >& log.fit_western_${runID} &
 # this creates 'PLScomposition_western_${runID}_full.nc'
+# note that this netCDF has y-values from N to S (contradicting the 
+# dim info for the y dim)
 
 ########################################################################
 # download eastern township data -------------------------------------
@@ -145,10 +147,15 @@ fi
 
 ./fit_eastern.R >& log.fit_eastern_${runID} &
 # this creates 'PLScomposition_eastern_${runID}_full.nc'
+# note that this netCDF has y-values from N to S (contradicting the 
+# dim info for the y dim)
 
 ########################################################################
 # subset final output to burned-in samples
 ########################################################################
+
+# this also flips the N->S orientation of netCDF files to their correct
+# S->N to match the y dimension as given in the netCDF
 
 # eastern
 burnin=25000
@@ -167,6 +174,9 @@ cp $outputDir/PLScomposition_western_${runID}.nc /server/web/share/paciorek/pale
 cp $outputDir/PLScomposition_eastern_${runID}.nc /server/web/share/paciorek/paleon/composition_east_v${productID}.nc
 
 # create merged full domain version
+
+burnin=25000
+./stitch_domains.R $burnin
 
 ########################################################################
 # do cross-validation -----------------------
