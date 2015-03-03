@@ -109,11 +109,11 @@ figWth = 22
 figHgtIndiv = 16*.5
 figWthIndiv = 22*.5
 
-pdf(file.path(outputDir, paste0('composition_', productVersion, '_fits.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('composition_fits_v', productVersion, '.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = pm, breaks = propBreaks, coords = coord, legendName = 'fitted proportions', map_data = usFortified, facet = TRUE)
 dev.off()
 
-pdf(file.path(outputDir, paste0('composition_', productVersion, '_fits_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
+pdf(file.path(outputDir, paste0('composition_fits_indiv_v', productVersion, '.pdf')), height = figHgtIndiv, width = figWthIndiv)
 make_veg_map(data = pm, breaks = propBreaks, coords = coord, legendName = 'fitted proportions', map_data = usFortified, facet = FALSE)
 dev.off()
 
@@ -122,11 +122,11 @@ psdBreaks = c(0, 0.01, 0.03, 0.05, 0.075, 0.10, 0.15, 0.2, 0.25)
 #psd[psd > .3] = 0.3
 #psdBreaks = c(0, 0.01, 0.03, 0.05, 0.10, 0.15, 0.2, 0.25, 0.3)
   
-pdf(file.path(outputDir, paste0('composition_', productVersion, '_uncertainty.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('composition_uncertainty_v', productVersion, '.pdf')), height = figHgt, width = figWth)
 make_veg_map(data = psd, breaks = psdBreaks, coords = coord, legendName = 'std. error', map_data = usFortified, col = heat.colors, facet = TRUE)
 dev.off()
 
-pdf(file.path(outputDir, paste0('composition_', productVersion, '_uncertainty_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
+pdf(file.path(outputDir, paste0('composition_uncertainty_indiv_v', productVersion, '.pdf')), height = figHgtIndiv, width = figWthIndiv)
 make_veg_map(data = psd, breaks = psdBreaks, coords = coord, legendName = 'std. error', map_data = usFortified, col = heat.colors, facet = FALSE)
 dev.off()
 
@@ -237,11 +237,11 @@ taxon_dat_long <- taxon_dat_long[!(taxon_dat_long$id <= max_west_id & taxon_dat_
 
 #  figs[[cnt]] <- make_areal_map(data = taxon_dat_long, variables = taxon, breaks = propBreaks, legendName = 'raw proportions', map_data = usFortified, facet = FALSE, ncol = 1, legend = FALSE) + theme(plot.margin = unit(rep(0,4), 'lines'))
 
-pdf(file.path(outputDir, paste0('composition_', productVersion, '_rawData.pdf')), height = figHgt, width = figWth)
+pdf(file.path(outputDir, paste0('composition_rawData_v', productVersion, '.pdf')), height = figHgt, width = figWth)
 make_areal_map(data = taxon_dat_long, variables = taxaNames, breaks = propBreaks, legendName = 'raw proportions', map_data = usFortified, facet = TRUE, legend = FALSE)
 dev.off()
 
-pdf(file.path(outputDir, paste0('composition_', productVersion, '_rawData_indiv.pdf')), height = figHgtIndiv, width = figWthIndiv)
+pdf(file.path(outputDir, paste0('composition_rawData_indiv_v', productVersion, '.pdf')), height = figHgtIndiv, width = figWthIndiv)
 make_areal_map(data = taxon_dat_long, variables = taxaNames, breaks = propBreaks, legendName = 'raw proportions', map_data = usFortified, facet = FALSE, legend = TRUE)
 dev.off()
 

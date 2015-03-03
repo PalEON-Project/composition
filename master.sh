@@ -170,8 +170,8 @@ domain=western
 # this creates 'PLScomposition_western_${runID}.nc'
 
 
-cp $outputDir/PLScomposition_western_${runID}.nc /server/web/share/paciorek/paleon/composition_midwest_v${productID}.nc
-cp $outputDir/PLScomposition_eastern_${runID}.nc /server/web/share/paciorek/paleon/composition_east_v${productID}.nc
+cp $outputDir/PLScomposition_western_${runID}.nc /server/web/share/paciorek/paleon/composition_midwest_v${productVersion}.nc
+cp $outputDir/PLScomposition_eastern_${runID}.nc /server/web/share/paciorek/paleon/composition_east_v${productVersion}.nc
 
 # create merged full domain version
 
