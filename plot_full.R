@@ -48,6 +48,8 @@ total[total == 0] <- 1
 raw_west <- raw_west / total
 dimnames(raw_west)[[2]] <- taxa$taxonName  
 
+
+
 # eastern data
 load(file.path(dataDir, paste0('data_eastern_', runID, '.Rda')))
 taxa_east <- taxa
@@ -70,6 +72,27 @@ attributes(raw_east)$dimnames[[2]] <- taxa$taxonName
 
 
 taxaNames <- unique(taxa_east$taxonName, taxa_west$taxonName)
+
+
+# put NA for masked areas for taxa not modeled in west
+taxaMissingInWest <- !(taxaNames %in% dimnames(raw_west)[[2]])
+old_raw_west <- raw_west
+raw_west <- matrix(as.numeric(NA), nrow(old_raw_west), ncol(raw_east))
+dimnames(raw_west)[[2]] <- taxaNames
+raw_west[ , dimnames(old_raw_west)[[2]]] <- old_raw_west
+
+
+# to fill in non-NA for cells lacking any trees but not water or out of PalEON states
+west_presence <- read.csv(file.path(dataDir, 'western.csv'))
+west_presence <- west_presence[west_presence$x <= easternLimitOfWesternDomain, ]
+dataPresent <- as.numeric(rowSums(west_presence[ , c(3:ncol(west_presence))]) > 0)
+tmp <- matrix(dataPresent, length(westernDomainY), length(westernDomainX))
+dataPresent <- c(t(tmp[rev(westernDomainY),]))
+rm(west_presence)
+for(p in 1:ncol(raw_west)) {
+    raw_west[is.na(raw_west[,p]) & dataPresent == 1, p] <- 0
+}
+
 
 finalNcdfName <- paste0('composition_v', productVersion, '.nc')
 
@@ -190,17 +213,6 @@ raw_west_poly <- rasterToPolygons(raster(ncols = length(westernDomainX), nrows =
 west_fort <- fortify(raw_west_poly)
 names(west_fort)[1:2] <- c('X', 'Y')
 
-# put NA for masked areas for taxa not modeled in west
-taxaMissingInWest <- !(taxaNames %in% dimnames(raw_west)[[2]])
-old_raw_west <- raw_west
-raw_west <- matrix(as.numeric(NA), nrow(old_raw_west), ncol(raw_east))
-dimnames(raw_west)[[2]] <- taxaNames
-# only really needed if want to plot 0 instead of NA where data are present:
-raw_west[mask[westernDomainX, rev(westernDomainY)], ] <- NA
-# chestnut/atl wh cedar in west get stripped out later anyway
-# (otherwise hard to deal with 0 tree places in MN and with
-# ohio overlap
-raw_west[ , dimnames(old_raw_west)[[2]]] <- old_raw_west
 
 west_fort$id <- as.numeric(west_fort$id)
 west_fort <- cbind(west_fort, raw_west[west_fort$id, ])
@@ -232,8 +244,9 @@ fort <- rbind(west_fort, east_fort)
 #names(fort) <- gsub("ZZZ", "/", names(fort))
 taxon_dat_long <- melt(fort, c('X', 'Y', 'order', 'hole', 'piece', 'group', 'id' ))
 
-max_west_id <- max(west_fort$id)
-taxon_dat_long <- taxon_dat_long[!(taxon_dat_long$id <= max_west_id & taxon_dat_long$variable %in% taxaNames[taxaMissingInWest]), ]
+# strip out chestnut/atl wh cedar as not modeled in west
+# max_west_id <- max(west_fort$id)
+# taxon_dat_long <- taxon_dat_long[!(taxon_dat_long$id <= max_west_id & taxon_dat_long$variable %in% taxaNames[taxaMissingInWest]), ]
 
 #  figs[[cnt]] <- make_areal_map(data = taxon_dat_long, variables = taxon, breaks = propBreaks, legendName = 'raw proportions', map_data = usFortified, facet = FALSE, ncol = 1, legend = FALSE) + theme(plot.margin = unit(rep(0,4), 'lines'))
 
