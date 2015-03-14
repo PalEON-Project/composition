@@ -75,3 +75,52 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
 
 
 
+make_areal_map <- function(data, variables = NULL, breaks, legendName = 'Raw proportions', map_data = usShp, facet = TRUE, col = terrain.colors, zero_color = terrain.colors(40)[39], reverse_colors = TRUE, print = TRUE, ncol = 5, legend = TRUE) {
+  make_map <- function(p) {
+
+    if(!is.null(p)) {
+        nm <- p
+        nm <- gsub("ZZZ", "/", nm)
+        nm <- gsub("\\.", " ", nm)
+    }
+    
+    col <- col(length(breaks)-1)
+    if(reverse_colors) col <- rev(col)
+    if(legend) guide <- "legend" else guide <- "none"
+    col[1] <- zero_color
+    d <- ggplot(data_to_plot, aes(X, Y, group = id)) + geom_polygon(aes(fill = as.factor(value))) + 
+      scale_fill_manual(values = col, labels = breaklabels, name = legendName, guide = guide) +
+        theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16))
+    d <- add_map_albers(plot_obj = d, map_data = map_data, dat = data_to_plot)
+    # this makes sure eastern-only taxa have full map
+    d <- d + scale_y_continuous(limits = range(yGrid)) + scale_x_continuous(limits = range(xGrid))
+    if(facet) {
+      d <- d + facet_wrap(~variable, ncol = ncol)
+    } else {
+      d <- d + ggtitle(nm)
+    }
+    d <- theme_clean(d)
+    return(d)
+  }
+
+  if(!is.null(variables))
+    data <- data[data$variable %in% variables, ]
+  data$value <- cut(data$value, breaks, include.lowest = TRUE, labels = FALSE)
+  
+  breaklabels <- apply(cbind(breaks[1:(length(breaks)-1)], breaks[2:length(breaks)]), 1, 
+                       function(r) { sprintf("%0.2f - %0.2f", r[1], r[2]) })
+
+  if(facet) {
+    data_to_plot <- data
+    d <- make_map(NULL)
+    if(print) print(d)
+  } else {
+    for ( p in variables ) {
+        data_to_plot <- data[data$variable == p, ]
+        d <- make_map(p)
+        if(print) print(d)
+    }
+  }
+  invisible(d)
+}
+
