@@ -191,3 +191,10 @@ checked 0.5 western data (plot of presence of data and raw proportions and total
 0.3-1 western might be the run w/ separate updates but based on bad data
 
 I've renamed the 0.3-0 .nc files as {east,midwest}_composition_v0.3.nc for posting on wiki
+
+3/14/15:
+tps (102,105) cv runs have fairly bad mixing and some very high sigma values for many taxa
+this is consistent with previous runs
+
+3/16/15:
+cv numbers are much larger in magnitude because after Simon's repreocessing there are a lot more trees in "minnesota subregion" (x<300000) (234k vs. 113k)

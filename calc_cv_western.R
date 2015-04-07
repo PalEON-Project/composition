@@ -6,10 +6,10 @@ runID <- paste0('western_', runID)
 
 require(ncdf4)
 
-if(!exists('uniqueRunID'))
-  stop("should have 'uniqueRunID' set")
+if(!exists('runID'))
+  stop("should have 'runID' set")
 
-load(file.path(dataDir, paste0('data_', runID, '_full.Rda')))
+load(file.path(dataDir, paste0('data_', runID, '.Rda')))
 
 replaceZeroWithThis <- 1e-5 # 1/10 of the 10000 samples
 
@@ -20,11 +20,11 @@ test <- ncvar_get(ncdfPtr, "Oak", c(1, 1, 1), c(-1, -1, -1))
 
 nSamples <- dim(test)[3]
 
-
 preds <- array(0, c(nCells, nTaxa, nSamples))
 #dimnames(preds)[[2]] <- taxa$taxonName
+# the m2:1 reverses the S->N orientation in the final netCDF file to match the cell numbering used in the modeling (which was N->S). Note that the netCDF files before burn-in are N->S
 for(p in 1:nTaxa) {
-  preds[ , p, ] <- ncvar_get(ncdfPtr, taxa$taxonName[p], c(1, 1, 1), c(-1, -1, -1))
+  preds[ , p, ] <- ncvar_get(ncdfPtr, taxa$taxonName[p], c(1, 1, 1), c(-1, -1, -1))[ , m2:1, ]
 }
 
 attributes(preds)$dimnames[[2]] <- gsub("/", "ZZZ", taxa$taxonName) 

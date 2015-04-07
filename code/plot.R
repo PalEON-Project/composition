@@ -1,5 +1,6 @@
-require(reshape2)
-require(grid)
+library(reshape2)
+library(grid)
+library(ggplot2)
 
 add_map_albers <- function(plot_obj, map_data = usShp, dat){
   p <- plot_obj + geom_path(data = map_data, aes(x = long, y = lat, group = group), size = 0.1) +
@@ -18,7 +19,7 @@ theme_clean <- function(plot_obj){
   return(plot_obj)
 }
 
-make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_data = usShp, facet = TRUE, col = terrain.colors, reverse_colors = TRUE, print = TRUE, ncol = 5, legend = TRUE) {
+make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_data = usShp, facet = TRUE, col = terrain.colors, reverse_colors = TRUE, print = TRUE, ncol = 5, legend = TRUE, title = TRUE) {
 
   make_map <- function() {
 
@@ -39,9 +40,9 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
     d <- ggplot() + geom_raster(data = taxon_dat_long, aes(x = X, y = Y, fill = factor(value))) + coord_fixed() + scale_fill_manual(labels = breaklabels, name = legendName, drop = FALSE, values = col, guide = guide) + theme(strip.text.x = element_text(size = 16), legend.key.size = unit(1.5, "cm"), legend.text = element_text(size = 16), legend.title = element_text(size = 16))
     d <- add_map_albers(plot_obj = d, map_data = map_data, dat = taxon_dat_long)
     if(facet) {
-      d <- d + facet_wrap(~variable, ncol = ncol)
+        d <- d + facet_wrap(~variable, ncol = ncol)
     } else {
-      d <- d + ggtitle(nm)
+        if(title) d <- d + ggtitle(nm) else d <- d + ggtitle(" ")
     }
     d <- theme_clean(d)
     return(d)
@@ -75,7 +76,7 @@ make_veg_map <- function(data, breaks, coords, legendName = 'Proportions', map_d
 
 
 
-make_areal_map <- function(data, variables = NULL, breaks, legendName = 'Raw proportions', map_data = usShp, facet = TRUE, col = terrain.colors, zero_color = terrain.colors(40)[39], reverse_colors = TRUE, print = TRUE, ncol = 5, legend = TRUE) {
+make_areal_map <- function(data, variables = NULL, breaks, legendName = 'Raw proportions', map_data = usShp, facet = TRUE, col = terrain.colors, zero_color = terrain.colors(40)[39], reverse_colors = TRUE, print = TRUE, ncol = 5, legend = TRUE, title = TRUE) {
   make_map <- function(p) {
 
     if(!is.null(p)) {
@@ -95,9 +96,9 @@ make_areal_map <- function(data, variables = NULL, breaks, legendName = 'Raw pro
     # this makes sure eastern-only taxa have full map
     d <- d + scale_y_continuous(limits = range(yGrid)) + scale_x_continuous(limits = range(xGrid))
     if(facet) {
-      d <- d + facet_wrap(~variable, ncol = ncol)
+        d <- d + facet_wrap(~variable, ncol = ncol)
     } else {
-      d <- d + ggtitle(nm)
+        if(title) d <- d + ggtitle(nm) else d <- d + ggtitle(" ")
     }
     d <- theme_clean(d)
     return(d)
