@@ -1,0 +1,44 @@
+# configuration file for running composition model
+# should follow syntax that can be read in both the UNIX shell and in R:
+# -- put all character strings in quotes
+# -- do not place any spaces before or after the "=" assignment
+
+# note that Albers grid and subsetting information for the subdomains is in code/set_domain.R
+
+westernVersion="0.5"
+easternVersionID="1372"
+easternVersion="0.9-1"
+ohioVersionID="471"  
+ohioVersion="0.2-1"
+
+productVersion="0.3"
+runID="0.3-101"  # or "0.3-1" for other runs, such as CV runs
+
+nbhdStructure="bin"  # bin, lindgren_nu1, tps
+
+# projectDir should be the main directory containing this config file
+projectDir="$HOME/research/jmac/composition"
+codeDir="code"
+
+# temporary directories for storing intermediate data and final output
+plotDir="/var/tmp/paciorek/paleon/comp/plots"
+outputDir="/var/tmp/paciorek/paleon/comp/output"
+tmpDir="/var/tmp/paciorek/paleon/comp/tmp"
+dataDir="/var/tmp/paciorek/paleon/comp/data"
+
+S=150000
+burnin=25000
+thin=500  # thinning applies to all S not just S-burnin
+secondThin=1
+resumeRun=FALSE
+numCoresForProps=4 # number of cores to use for drawing final proportions (no parallelization used in MCMC)
+numSamplesForProps=10000
+
+
+buffer=6
+
+seed=0
+
+cv=TRUE
+cellHoldOutPct=0.95
+treeHoldOutPct=0.05
