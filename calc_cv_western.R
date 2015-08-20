@@ -83,12 +83,12 @@ attributes(samples)$dimnames[[2]] <- c('cell','tree')
 phat <- pm[dataCellTest[ , 1], ]
 yvals <- matrix(0, nr = nC, nc = nTaxa)
 yvals[cbind(seq_len(nC), dataCellTest[, 2])] <- 1
-results['brier','cell','score_of_post_mean'] <- sum((phat - yvals)^2)
+results['brier','cell','score_of_post_mean'] <- sum((phat - yvals)^2) / nC
 
 phat <- pm[dataTreeTest[ , 1], ]
 yvals <- matrix(0, nr = nT, nc = nTaxa)
 yvals[cbind(seq_len(nT), dataTreeTest[, 2])] <- 1
-results['brier','tree','score_of_post_mean'] <- sum((phat - yvals)^2)
+results['brier','tree','score_of_post_mean'] <- sum((phat - yvals)^2) / nT
 
 ### using posterior samples
 
@@ -99,14 +99,14 @@ yvals <- matrix(0, nr = nC, nc = nTaxa)
 yvals[cbind(seq_len(nC), dataCellTest[,2])] <- 1
 for(s in seq_len(nSamples)) {
   phat <- preds[ , , s][dataCellTest[ , 1], ]
-  brierCell[s] <- sum((phat - yvals)^2)
+  brierCell[s] <- sum((phat - yvals)^2) / nC
 }
 
 yvals <- matrix(0, nr = nT, nc = nTaxa)
 yvals[cbind(seq_len(nT), dataTreeTest[,2])] <- 1
 for(s in seq_len(nSamples)) {
   phat <- preds[ , , s][dataTreeTest[ , 1], ]
-  brierTree[s] <- sum((phat - yvals)^2)
+  brierTree[s] <- sum((phat - yvals)^2) / nT
 }
 
 samples['brier','cell',] <- brierCell

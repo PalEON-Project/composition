@@ -3,14 +3,17 @@
 # both the western PLS data and the eastern township data
 # note that these steps are intended for use on UNIX-like machines and will need to be modified for Windows (and possibly for Mac OS X)
 
-# this is not intended to be run as a full script as later components depend on earlier ones having finished; rather it is intended to allow one to run all of the steps of the model fitting/analysis
+# this is not intended to be run as a full script as later components depend on earlier ones having finished (and the fitting steps take many days); rather it is intended to allow one to run all of the steps of the model fitting/analysis
 
-# this code is being run under R 3.1.2 and with package versioning controlled by packrat
+# this code was originally being run under R 3.1.2 (now R 3.2.0) and with package versioning controlled by packrat
 # restore any packages that are not installed on the system
 Rscript -e "require(packrat); packrat::restore()"
 
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
 # in general, it's good to create a version of config, say config_0.3-0, specific to each run and then copy that file to 'config'
+
+\cp config_0.4-0 config
+
 source config
 
 export OMP_NUM_THREADS=1
@@ -52,15 +55,15 @@ function wgetWiki() {
 ########################################################################
 
 # get taxon conversion table
-if [ ! -e level3s_v${productVersion}.csv ]; then
+if [ ! -e level3s_v${taxonTranslationVersion}.csv ]; then
     cd $projectDir
-    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Blevel3s_v${productVersion}.csv" -O level3s_v${productVersion}.csv
+    wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_products%3Blevel3s_v${taxonTranslationVersion}.csv" -O level3s_v${taxonTranslationVersion}.csv
 fi
 if [ -e level3s.csv ]; then
     rm -f level3s.csv
 fi
 
-ln -s level3s_v${productVersion}.csv level3s.csv
+ln -s level3s_v${taxonTranslationVersion}.csv level3s.csv
 
 ########################################################################
 # download western data ------------------------------------------------
@@ -83,8 +86,6 @@ cd $projectDir
 ########################################################################
 # preprocess western data ----------------------------------------------
 ########################################################################
-
-# cp config_{version}-{runID} config
 
 if [ ! -e $dataDir/data_western_${runID}.Rda ]; then
     ./build_western.R >& log.build_western_${runID} &
@@ -177,6 +178,7 @@ cp $outputDir/PLScomposition_eastern_${runID}.nc /server/web/share/paciorek/pale
 
 burnin=25000
 ./stitch_domains.R $burnin
+# this gives errors for Atl Wh Ced and Chestnut in west - I presume this was happening before and is why the ncvar_get is wrapped in a try()
 
 ########################################################################
 # make netCDFs with summary stats (posterior mean, sd, etc.) -----------
@@ -189,7 +191,18 @@ burnin=25000
 ########################################################################
 
 if [ $cv = "TRUE" ]; then
-    ./calc_cv_western.R >& log.calc_cv_western_${runID} &
+# machs="scf-sm00 scf-sm01 scf-sm02 scf-sm03 scf-sm10 scf-sm11 scf-sm12 scf-sm13"
+#for mach in $machs; do  ssh $mach mkdir -p /var/tmp/paciorek/paleon/comp/{data,output}; rsync -av /var/tmp/paciorek/paleon/comp/data/data_western* paciorek@$mach:/var/tmp/paciorek/paleon/comp/data/; done
+    for (( i = 101; i <= 106; i++ )); do
+        \cp config_${productVersion}-${i} config
+        source config
+        if [ ! -e $dataDir/data_western_${runID}.Rda ]; then
+            ./build_western.R >& log.build_western_${runID} 
+            # this creates 'data_western_${runID}.Rda'
+        fi
+        ./fit_western.R >& log.fit_western_${runID}
+        ./calc_cv_western.R >& log.calc_cv_western_${runID} 
+    done
 fi
 
 
@@ -207,6 +220,7 @@ wget $cookieArgs "https://paleon.geography.wisc.edu/lib/exe/fetch.php/data_and_p
 cd $dataDir
 unzip tmp_alb.zip
 
+# this is deprecated as we concentrate on plots of full domain below
 cd $projectDir
 ./plot_eastern.R
 ./plot_western.R

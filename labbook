@@ -198,3 +198,33 @@ this is consistent with previous runs
 
 3/16/15:
 cv numbers are much larger in magnitude because after Simon's repreocessing there are a lot more trees in "minnesota subregion" (x<300000) (234k vs. 113k)
+
+7/7/15:
+got 0.6-2 western from Simon with additional LMW data from Jody
+
+version0.4 will be based on this with the eastern v0.4 just a copy of eastern v0.3 since input data have not changed
+
+I made a branch version0.3 and am now working with v0.4 in branch master
+
+7/25/15:
+0.4-0 is core run
+0.4-{101-106} follow naming conventions from before
+haven't started TPS runs yet - code dying on cluster for some reason
+
+having to do drawProportions() manually for 0.4-0 as can't fork because of memory limits - not sure why it's using 2.7 Gb RAM...
+
+8/3/15:
+starting TPS runs on gandalf
+
+8/5/15:
+sigma2 mixing for 0.4-0 seems similar to 0.3-0
+as w/ 0.3, Lindgren mixing not as good and there are very large sigma2 values
+
+using eastern results from 0.3 for 0.4 via symlink
+cd /var/tmp/paciorek/paleon/comp/output 
+lrwxrwxrwx 1 paciorek scfstaff         58 Aug  5 10:26 PLScomposition_eastern_0.4-0_full.nc -> ../../comp_0.3/output/PLScomposition_eastern_0.3-0_full.nc
+lrwxrwxrwx 1 paciorek scfstaff         53 Aug  5 10:27 PLScomposition_eastern_0.4-0.nc -> ../../comp_0.3/output/PLScomposition_eastern_0.3-0.nc
+also need to link 
+lrwxrwxrwx 1 paciorek scfstaff         42 Aug  5 10:30 data_eastern_0.4-0.Rda -> ../../comp_0.3/data/data_eastern_0.3-0.Rda
+
+same deal with intersection_eastern.Rda and with comp_0.3/data/{eastern,ohio}
