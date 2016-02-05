@@ -12,7 +12,8 @@ Rscript -e "require(packrat); packrat::restore()"
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
 # in general, it's good to create a version of config, say config_0.4-0, specific to each run and then copy that file to 'config'
 
-\cp config_0.4-0 config
+# for example:
+# \cp config_0.4-0 config
 
 source config
 
@@ -39,6 +40,8 @@ fi
 # setup for down/uploading from Wiki   ---------------------------------
 ########################################################################
 
+# do not run these steps if obtaining data from NIS/DataOne
+
 # get cookie with Wiki authentication info
 wget --post-data="u=${WIKI_USERNAME}&p=${WIKI_PASSWORD}&sectok=b7649cb05e87dc0f45d9d91851a7b097&id=start&r=1&do=login" --save-cookies=${dataDir}/my-cookies.txt --keep-session-cookies https://paleon.geography.wisc.edu/doku.php/dw__login
 
@@ -54,6 +57,9 @@ function wgetWiki() {
 # download meta info    ------------------------------------------------
 ########################################################################
 
+# do not run these steps if obtaining data from NIS/DataOne
+# level3s_v0.3.csv should be in the repository
+
 # get taxon conversion table
 if [ ! -e level3s_v${taxonTranslationVersion}.csv ]; then
     cd $projectDir
@@ -68,6 +74,9 @@ ln -s level3s_v${taxonTranslationVersion}.csv level3s.csv
 ########################################################################
 # download western data ------------------------------------------------
 ########################################################################
+
+# do not run these steps if obtaining data from NIS/DataOne
+# use msb-paleon.2.0 instead
 
 cd $dataDir
 
@@ -105,6 +114,8 @@ fi
 # download eastern township data -------------------------------------
 ########################################################################
 
+# do not run these steps if obtaining data from NIS/DataOne
+# use msb-paleon.4.0 and msb-paleon.5.0 instead
 
 cd $dataDir
 
@@ -191,8 +202,6 @@ burnin=25000
 ########################################################################
 
 if [ $cv = "TRUE" ]; then
-# machs="scf-sm00 scf-sm01 scf-sm02 scf-sm03 scf-sm10 scf-sm11 scf-sm12 scf-sm13"
-#for mach in $machs; do  ssh $mach mkdir -p /var/tmp/paciorek/paleon/comp/{data,output}; rsync -av /var/tmp/paciorek/paleon/comp/data/data_western* paciorek@$mach:/var/tmp/paciorek/paleon/comp/data/; done
     for (( i = 101; i <= 106; i++ )); do
         \cp config_${productVersion}-${i} config
         source config
@@ -221,9 +230,9 @@ cd $dataDir
 unzip tmp_alb.zip
 
 # this is deprecated as we concentrate on plots of full domain below
-cd $projectDir
-./plot_eastern.R
-./plot_western.R
+# cd $projectDir
+# ./plot_eastern.R
+# ./plot_western.R
 
 # this creates the mask (paleonMask.nc) for screening out water and non-paleon state cells
 ./create_mask.R >& log.create_mask &
