@@ -1,12 +1,12 @@
 composition
 ===========
 
-Code for fitting composition models across the entire domain.  master.sh is the controller script that indicates how all processing is done.  Data files are downloaded from the Paleon Wiki to the 'dataDir' specified in the config file. Output is placed in the 'outputDir' specified in the config file.
+Code for fitting composition models across the entire domain.  *master.sh* is the controller script that indicates how all processing is done.  Data files are downloaded from the Paleon Wiki to the 'dataDir' specified in the config file. Output is placed in the 'outputDir' specified in the *config* file.
 
 If you want to reproduce the work as a non-Paleon participant you can find the input data files in the public domain as follows:
 western subdomain: https://portal.lternet.edu/nis/mapbrowse?packageid=msb-paleon.2.0 is equivalent to western-0.6-2.csv
-northeastern subdomain: SetTreeComp_Northeast_Level1_v1.0.csv is equivalent to 1372polygons_v0.9-1.csv and SetTreeComp_Northeast_Level1_v1.0.zip contains the shapefile info in 1372polygons_v0.9-1.*
-ohio subdomain:  SetTreeComp_Ohio_Level1_v1.0.csv is equivalent to OH471polygons_v0.2-1.csv and SetTreeComp_Ohio_Level1_v1.0.zip contains the shapefile infor in OH471polygons_v0.2-1.*
+northeastern subdomain: in https://portal.lternet.edu/nis/mapbrowse?packageid=msb-paleon.4.0, SetTreeComp_Northeast_Level1_v1.0.csv is equivalent to 1372polygons_v0.9-1.csv and SetTreeComp_Northeast_Level1_v1.0.zip contains the shapefile info in 1372polygons_v0.9-1.*
+ohio subdomain: in https://portal.lternet.edu/nis/mapbrowse?packageid=msb-paleon.5.0, SetTreeComp_Ohio_Level1_v1.0.csv is equivalent to OH471polygons_v0.2-1.csv and SetTreeComp_Ohio_Level1_v1.0.zip contains the shapefile infor in OH471polygons_v0.2-1.*
 
 Current master branch creates the v0.4 product posted on DataOne/NIS and used in the PLOS ONE paper. Eastern product was not refit as the input data did not change from v0.3. Simply copied eastern v0.3 to v0.4.
 
