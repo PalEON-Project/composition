@@ -5,12 +5,12 @@
 
 # this is not intended to be run as a full script as later components depend on earlier ones having finished (and the fitting steps take many days); rather it is intended to allow one to run all of the steps of the model fitting/analysis
 
-# this code was originally being run under R 3.1.2 (now R 3.2.0) and with package versioning controlled by packrat
+# this code was originally being run under R 3.1.2 (now R 3.2.0) and with package versioning controlled by packrat; note that use of BCE-2015-fall is very likely to work fine (it provides R 3.2.2)
 # restore any packages that are not installed on the system
 Rscript -e "require(packrat); packrat::restore()"
 
 # modify the contents of the config file to reflect the data versions to be used, relevant directories, and parameters of the MCMC
-# in general, it's good to create a version of config, say config_0.3-0, specific to each run and then copy that file to 'config'
+# in general, it's good to create a version of config, say config_0.4-0, specific to each run and then copy that file to 'config'
 
 \cp config_0.4-0 config
 

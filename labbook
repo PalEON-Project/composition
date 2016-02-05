@@ -215,6 +215,7 @@ having to do drawProportions() manually for 0.4-0 as can't fork because of memor
 
 8/3/15:
 starting TPS runs on gandalf
+(9/4/15: finished and copied to /v/t on smeagol and to /scr/u/p/vt/paleon
 
 8/5/15:
 sigma2 mixing for 0.4-0 seems similar to 0.3-0
@@ -228,3 +229,6 @@ also need to link
 lrwxrwxrwx 1 paciorek scfstaff         42 Aug  5 10:30 data_eastern_0.4-0.Rda -> ../../comp_0.3/data/data_eastern_0.3-0.Rda
 
 same deal with intersection_eastern.Rda and with comp_0.3/data/{eastern,ohio}
+
+2/4/16:
+all files in /var/tmp/paciorek/paleon/comp_{0.4,0.3}/{data,output} now backed up to /scratch/users/paciorek/paleon/comp_{0.3,0.4}

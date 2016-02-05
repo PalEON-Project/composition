@@ -9,9 +9,15 @@ require(rgdal)
 require(raster)
 require(ggplot2)
 
+paleonStates <- c("Minnesota","Wisconsin","Michigan", "Illinois", "Indiana", "Ohio", "Pennsylvania", "New Jersey", "New York", "Massachusetts", "Rhode Island", "Connecticut", "New Hampshire", "Vermont", "Maine")
+
 usShp <- readShapeLines(file.path(dataDir, 'us_alb.shp'), proj4string=CRS('+init=epsg:3175'))
 usShp@data$id <- rownames(usShp@data)
 usFortified <- fortify(usShp, region='id')
+
+paleonShp <- usShp[usShp$STATE_NAME %in% paleonStates, ]
+paleonShp@data$id <- rownames(paleonShp@data)
+paleonFortified <- fortify(paleonShp, region='id')
 
 ########################################################################################
 ## get raw data in form to use
